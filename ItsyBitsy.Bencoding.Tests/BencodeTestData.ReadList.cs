@@ -42,6 +42,32 @@ namespace ItsyBitsy.Bencoding.Tests
 
         ////////////////////////////////////////////////////////////////////////////////////////////
 
+        public static readonly (string bencodeString, string errorMessage, int errorPosition)[] ReadList_MissingData_DataAndError = new[]
+        {
+            // Missing head byte.
+            ("", "Expected 'l' but reached the end of the source buffer while reading a list head.", 0),
+
+            // Missing value byte.
+            ("l", "Expected 'd', 'e', 'i', 'l', or '0'-'9' but reached the end of the source buffer while reading the token type.", 1),
+        };
+
+        public static readonly (string bencodeString, string errorMessage, int errorPosition)[] ReadList_InvalidData_DataAndError = new[]
+        {
+            // Invalid head byte.
+            ("d", "Expected 'l' but found 'd' while reading a list head.", 0),
+            ("e", "Expected 'l' but found 'e' while reading a list head.", 0),
+            ("i", "Expected 'l' but found 'i' while reading a list head.", 0),
+            ("1", "Expected 'l' but found '1' while reading a list head.", 0),
+            (":", "Expected 'l' but found ':' while reading a list head.", 0),
+            ("-", "Expected 'l' but found '-' while reading a list head.", 0),
+            ("\0", "Expected 'l' but found '\\x00' while reading a list head.", 0),
+
+            // Invalid value byte.
+            ("l:", "Expected 'd', 'e', 'i', 'l', or '0'-'9' but found ':' while reading the token type.", 1),
+            ("l-", "Expected 'd', 'e', 'i', 'l', or '0'-'9' but found '-' while reading the token type.", 1),
+            ("l\0", "Expected 'd', 'e', 'i', 'l', or '0'-'9' but found '\\x00' while reading the token type.", 1),
+        };
+
         public static readonly (string bencodeString, string errorMessage, int errorPosition)[] ReadListHead_MissingData_DataAndError = new[]
         {
             // Missing head byte.
