@@ -16,6 +16,7 @@
 // 02110-1301, USA.
 //
 using System;
+using System.Collections.Generic;
 
 namespace ItsyBitsy.Bencoding
 {
@@ -319,6 +320,38 @@ namespace ItsyBitsy.Bencoding
         }
 
         /// <summary>
+        /// Reads a list and returns the positions of the elements.
+        /// </summary>
+        /// <returns>The list of positions of the list element values.</returns>
+        /// <exception cref="InvalidOperationException">The reader is not in a state that allows a
+        ///     list to be read.</exception>
+        /// <exception cref="InvalidBencodeException">The reader encountered invalid data while
+        ///     attempting to read a value.</exception>
+        /// <exception cref="UnsupportedBencodeException">The reader encountered an integer that is
+        ///     not in the supported range.</exception>
+        /// <exception cref="UnsupportedBencodeException">The reader encountered a string with a
+        ///     length that is not in the supported range.</exception>
+        /// <exception cref="UnsupportedBencodeException">The reader encountered a key with a length
+        ///     that is not in the supported range.</exception>
+        public List<int> ReadList()
+        {
+            ReadListHead();
+
+            var list = new List<int>();
+
+            while (ReadTokenType() != BencodeTokenType.ListTail)
+            {
+                list.Add(Position);
+
+                SkipValue();
+            }
+
+            ReadListTail();
+
+            return list;
+        }
+
+        /// <summary>
         /// Reads the beginning of a list.
         /// </summary>
         /// <exception cref="InvalidOperationException">The reader is not in a state that allows a
@@ -360,6 +393,53 @@ namespace ItsyBitsy.Bencoding
                 _state = BencodeSpanReader.State.Error;
                 throw;
             }
+        }
+
+        /// <summary>
+        /// Reads a dictionary and returns a <see cref="BencodeDictionary{TPosition}"/>.
+        /// </summary>
+        /// <param name="skipDuplicateKeys">If <see langword="true"/>, duplicate keys are skipped
+        ///     rather than causing <see cref="InvalidBencodeException"/> to be thrown.</param>
+        /// <returns>The dictionary.</returns>
+        /// <exception cref="InvalidOperationException">The reader is not in a state that allows a
+        ///     dictionary to be read.</exception>
+        /// <exception cref="InvalidBencodeException">The reader encountered a duplicate key while
+        ///     reading the dictionary.</exception>
+        /// <exception cref="InvalidBencodeException">The reader encountered invalid data while
+        ///     attempting to read a value.</exception>
+        /// <exception cref="UnsupportedBencodeException">The reader encountered an integer that is
+        ///     not in the supported range.</exception>
+        /// <exception cref="UnsupportedBencodeException">The reader encountered a string with a
+        ///     length that is not in the supported range.</exception>
+        /// <exception cref="UnsupportedBencodeException">The reader encountered a key with a length
+        ///     that is not in the supported range.</exception>
+        public BencodeDictionary<int> ReadDictionary(bool skipDuplicateKeys = false)
+        {
+            ReadDictionaryHead();
+
+            var dictionary = new BencodeDictionary<int>();
+
+            int duplicateKeyPosition = -1;
+
+            while (ReadTokenType() != BencodeTokenType.DictionaryTail)
+            {
+                int keyPosition = Position;
+
+                ReadOnlyMemory<byte> key = ReadKey();
+
+                if (!(dictionary.TryAdd(key, Position) || skipDuplicateKeys))
+                    if (duplicateKeyPosition == -1)
+                        duplicateKeyPosition = keyPosition;
+
+                SkipValue();
+            }
+
+            ReadDictionaryTail();
+
+            if (duplicateKeyPosition != -1)
+                throw new InvalidBencodeException("The keys of the dictionary are not unique.", duplicateKeyPosition);
+
+            return dictionary;
         }
 
         /// <summary>
