@@ -17,6 +17,7 @@
 //
 using System;
 using System.Collections.Generic;
+using static ItsyBitsy.Bencoding.BencodeSpanReader;
 
 namespace ItsyBitsy.Bencoding
 {
@@ -29,7 +30,7 @@ namespace ItsyBitsy.Bencoding
 
         private int _index;
 
-        private BencodeSpanReader.State _state;
+        private State _state;
 
         private int _stringHeadLength;
 
@@ -74,7 +75,7 @@ namespace ItsyBitsy.Bencoding
                     throw new ArgumentOutOfRangeException(nameof(value));
 
                 _index = value;
-                _state = BencodeSpanReader.State.Initial;
+                _state = State.Initial;
                 _stringHeadLength = 0;
                 _stringLength = 0;
                 _scopeStack.Clear();
@@ -114,11 +115,11 @@ namespace ItsyBitsy.Bencoding
         {
             try
             {
-                return BencodeSpanReader.ReadTokenTypeInternal(_memory.Span, ref _index, _state);
+                return ReadTokenTypeInternal(_memory.Span, ref _index, _state);
             }
             catch
             {
-                _state = BencodeSpanReader.State.Error;
+                _state = State.Error;
                 throw;
             }
         }
@@ -136,15 +137,15 @@ namespace ItsyBitsy.Bencoding
         ///     length that is not in the supported range.</exception>
         public void SkipValue()
         {
-            _state = BencodeSpanReader.GetStateAfterValue(_state);
+            _state = GetStateAfterValue(_state);
 
             try
             {
-                BencodeSpanReader.SkipValueInternal(_memory.Span, ref _index, ref _stringHeadLength, ref _stringLength);
+                SkipValueInternal(_memory.Span, ref _index, ref _stringHeadLength, ref _stringLength);
             }
             catch
             {
-                _state = BencodeSpanReader.State.Error;
+                _state = State.Error;
                 throw;
             }
         }
@@ -168,15 +169,15 @@ namespace ItsyBitsy.Bencoding
         ///     value to be written.</exception>
         public void ReadValueTo(ref BencodeSpanWriter writer)
         {
-            _state = BencodeSpanReader.GetStateAfterValue(_state);
+            _state = GetStateAfterValue(_state);
 
             try
             {
-                BencodeSpanReader.ReadValueToInternal(_memory.Span, ref _index, ref _stringHeadLength, ref _stringLength, ref writer);
+                ReadValueToInternal(_memory.Span, ref _index, ref _stringHeadLength, ref _stringLength, ref writer);
             }
             catch
             {
-                _state = BencodeSpanReader.State.Error;
+                _state = State.Error;
                 throw;
             }
         }
@@ -205,15 +206,15 @@ namespace ItsyBitsy.Bencoding
             if (writer == null)
                 throw new ArgumentNullException(nameof(writer));
 
-            _state = BencodeSpanReader.GetStateAfterValue(_state);
+            _state = GetStateAfterValue(_state);
 
             try
             {
-                BencodeSpanReader.ReadValueToInternal(_memory.Span, ref _index, ref _stringHeadLength, ref _stringLength, writer);
+                ReadValueToInternal(_memory.Span, ref _index, ref _stringHeadLength, ref _stringLength, writer);
             }
             catch
             {
-                _state = BencodeSpanReader.State.Error;
+                _state = State.Error;
                 throw;
             }
         }
@@ -230,15 +231,15 @@ namespace ItsyBitsy.Bencoding
         ///     not in the supported range.</exception>
         public long ReadInteger()
         {
-            _state = BencodeSpanReader.GetStateAfterValue(_state);
+            _state = GetStateAfterValue(_state);
 
             try
             {
-                return BencodeSpanReader.ReadIntegerInternal(_memory.Span, ref _index);
+                return ReadIntegerInternal(_memory.Span, ref _index);
             }
             catch
             {
-                _state = BencodeSpanReader.State.Error;
+                _state = State.Error;
                 throw;
             }
         }
@@ -259,17 +260,17 @@ namespace ItsyBitsy.Bencoding
         /// </remarks>
         public int ReadStringLength()
         {
-            _ = BencodeSpanReader.GetStateAfterValue(_state);
+            _ = GetStateAfterValue(_state);
 
             try
             {
-                BencodeSpanReader.ReadStringLengthInternal(_memory.Span, ref _index, ref _stringHeadLength, ref _stringLength);
+                ReadStringLengthInternal(_memory.Span, ref _index, ref _stringHeadLength, ref _stringLength);
 
                 return _stringLength;
             }
             catch
             {
-                _state = BencodeSpanReader.State.Error;
+                _state = State.Error;
                 throw;
             }
         }
@@ -360,15 +361,15 @@ namespace ItsyBitsy.Bencoding
         ///     attempting to read the beginning of a list.</exception>
         public void ReadListHead()
         {
-            _state = BencodeSpanReader.EnterListScope(_state, ref _scopeStack);
+            _state = EnterListScope(_state, ref _scopeStack);
 
             try
             {
-                BencodeSpanReader.ReadListHeadInternal(_memory.Span, ref _index);
+                ReadListHeadInternal(_memory.Span, ref _index);
             }
             catch
             {
-                _state = BencodeSpanReader.State.Error;
+                _state = State.Error;
                 throw;
             }
         }
@@ -382,15 +383,15 @@ namespace ItsyBitsy.Bencoding
         ///     attempting to read the end of a list.</exception>
         public void ReadListTail()
         {
-            _state = BencodeSpanReader.ExitListScope(_state, ref _scopeStack);
+            _state = ExitListScope(_state, ref _scopeStack);
 
             try
             {
-                BencodeSpanReader.ReadListTailInternal(_memory.Span, ref _index);
+                ReadListTailInternal(_memory.Span, ref _index);
             }
             catch
             {
-                _state = BencodeSpanReader.State.Error;
+                _state = State.Error;
                 throw;
             }
         }
@@ -451,15 +452,15 @@ namespace ItsyBitsy.Bencoding
         ///     attempting to read the beginning of a dictionary.</exception>
         public void ReadDictionaryHead()
         {
-            _state = BencodeSpanReader.EnterDictionaryScope(_state, ref _scopeStack);
+            _state = EnterDictionaryScope(_state, ref _scopeStack);
 
             try
             {
-                BencodeSpanReader.ReadDictionaryHeadInternal(_memory.Span, ref _index);
+                ReadDictionaryHeadInternal(_memory.Span, ref _index);
             }
             catch
             {
-                _state = BencodeSpanReader.State.Error;
+                _state = State.Error;
                 throw;
             }
         }
@@ -473,15 +474,15 @@ namespace ItsyBitsy.Bencoding
         ///     attempting to read the end of a dictionary.</exception>
         public void ReadDictionaryTail()
         {
-            _state = BencodeSpanReader.ExitDictionaryScope(_state, ref _scopeStack);
+            _state = ExitDictionaryScope(_state, ref _scopeStack);
 
             try
             {
-                BencodeSpanReader.ReadDictionaryTailInternal(_memory.Span, ref _index);
+                ReadDictionaryTailInternal(_memory.Span, ref _index);
             }
             catch
             {
-                _state = BencodeSpanReader.State.Error;
+                _state = State.Error;
                 throw;
             }
         }
@@ -497,15 +498,15 @@ namespace ItsyBitsy.Bencoding
         ///     that is not in the supported range.</exception>
         public void SkipKey()
         {
-            _state = BencodeSpanReader.GetStateAfterKey(_state);
+            _state = GetStateAfterKey(_state);
 
             try
             {
-                _ = BencodeSpanReader.ReadStringInternal(_memory.Span, ref _index, ref _stringHeadLength, ref _stringLength);
+                _ = ReadStringInternal(_memory.Span, ref _index, ref _stringHeadLength, ref _stringLength);
             }
             catch
             {
-                _state = BencodeSpanReader.State.Error;
+                _state = State.Error;
                 throw;
             }
         }
@@ -567,17 +568,17 @@ namespace ItsyBitsy.Bencoding
         /// </remarks>
         public int ReadKeyLength()
         {
-            _ = BencodeSpanReader.GetStateAfterKey(_state);
+            _ = GetStateAfterKey(_state);
 
             try
             {
-                BencodeSpanReader.ReadStringLengthInternal(_memory.Span, ref _index, ref _stringHeadLength, ref _stringLength);
+                ReadStringLengthInternal(_memory.Span, ref _index, ref _stringHeadLength, ref _stringLength);
 
                 return _stringLength;
             }
             catch
             {
-                _state = BencodeSpanReader.State.Error;
+                _state = State.Error;
                 throw;
             }
         }
@@ -639,30 +640,30 @@ namespace ItsyBitsy.Bencoding
 
         private ReadOnlySpan<byte> ReadStringSpan()
         {
-            _state = BencodeSpanReader.GetStateAfterValue(_state);
+            _state = GetStateAfterValue(_state);
 
             try
             {
-                return BencodeSpanReader.ReadStringInternal(_memory.Span, ref _index, ref _stringHeadLength, ref _stringLength);
+                return ReadStringInternal(_memory.Span, ref _index, ref _stringHeadLength, ref _stringLength);
             }
             catch
             {
-                _state = BencodeSpanReader.State.Error;
+                _state = State.Error;
                 throw;
             }
         }
 
         private ReadOnlySpan<byte> ReadKeySpan()
         {
-            _state = BencodeSpanReader.GetStateAfterKey(_state);
+            _state = GetStateAfterKey(_state);
 
             try
             {
-                return BencodeSpanReader.ReadStringInternal(_memory.Span, ref _index, ref _stringHeadLength, ref _stringLength);
+                return ReadStringInternal(_memory.Span, ref _index, ref _stringHeadLength, ref _stringLength);
             }
             catch
             {
-                _state = BencodeSpanReader.State.Error;
+                _state = State.Error;
                 throw;
             }
         }

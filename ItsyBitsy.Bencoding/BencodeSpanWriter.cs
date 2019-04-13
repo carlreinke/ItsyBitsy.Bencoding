@@ -17,18 +17,23 @@
 //
 using System;
 using System.Buffers.Text;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 namespace ItsyBitsy.Bencoding
 {
     /// <summary>
     /// Represents a writer that provides generation of bencoded data.
     /// </summary>
-    /// <remarks>
-    /// <see cref="BencodeSpanWriter"/> does not validate the order of keys. 
-    /// </remarks>
     public ref struct BencodeSpanWriter
     {
+        private const int _intMaxDigits = 10;
+
+        private const int _longMaxDigits = 19;
+
         private readonly Span<byte> _span;
+
+        private readonly Stack<PreviousKeyRange> _previousKeyStack;
 
         private int _index;
 
@@ -36,17 +41,23 @@ namespace ItsyBitsy.Bencoding
 
         private BitStack _scopeStack;
 
+        private PreviousKeyRange _previousKey;
+
         /// <summary>
         /// Initializes a new <see cref="BencodeSpanWriter"/> instance using the specified
         /// destination buffer.
         /// </summary>
         /// <param name="destination">The span to write the encoded data into.</param>
-        public BencodeSpanWriter(Span<byte> destination)
+        /// <param name="skipValidation">If <see langword="true"/>, keys are not checked for
+        ///     mis-ordering and duplication as they are being written.</param>
+        public BencodeSpanWriter(Span<byte> destination, bool skipValidation = false)
         {
             _span = destination;
             _index = 0;
             _state = State.Initial;
             _scopeStack = new BitStack();
+            _previousKey = PreviousKeyRange.None;
+            _previousKeyStack = skipValidation ? null : new Stack<PreviousKeyRange>();
         }
 
         /// <summary>
@@ -68,7 +79,19 @@ namespace ItsyBitsy.Bencoding
 
             try
             {
-                WriteIntegerInternal(_span, ref _index, value);
+                Span<byte> numberBuffer = stackalloc byte[1 + _longMaxDigits];
+                if (!Utf8Formatter.TryFormat(value, numberBuffer, out int numberLength))
+                    throw new InvalidOperationException("Unreachable!");
+
+                var span = CheckCapacity(1 + numberLength + 1);
+
+                span[0] = (byte)'i';
+                span = span.Slice(1);
+                numberBuffer.Slice(0, numberLength).CopyTo(span);
+                span = span.Slice(numberLength);
+                span[0] = (byte)'e';
+
+                Advance(1 + numberLength + 1);
             }
             catch
             {
@@ -89,15 +112,7 @@ namespace ItsyBitsy.Bencoding
         {
             _state = GetStateAfterValue(_state);
 
-            try
-            {
-                WriteStringInternal(_span, ref _index, value);
-            }
-            catch
-            {
-                _state = State.Error;
-                throw;
-            }
+            WriteStringInternal(value);
         }
 
         /// <summary>
@@ -113,7 +128,11 @@ namespace ItsyBitsy.Bencoding
 
             try
             {
-                WriteListHeadInternal(_span, ref _index);
+                var span = CheckCapacity(1);
+
+                span[0] = (byte)'l';
+
+                Advance(1);
             }
             catch
             {
@@ -135,7 +154,11 @@ namespace ItsyBitsy.Bencoding
 
             try
             {
-                WriteListTailInternal(_span, ref _index);
+                var span = CheckCapacity(1);
+
+                span[0] = (byte)'e';
+
+                Advance(1);
             }
             catch
             {
@@ -155,9 +178,19 @@ namespace ItsyBitsy.Bencoding
         {
             _state = EnterDictionaryScope(_state, ref _scopeStack);
 
+            if (_previousKeyStack != null)
+            {
+                _previousKeyStack.Push(_previousKey);
+                _previousKey = PreviousKeyRange.None;
+            }
+
             try
             {
-                WriteDictionaryHeadInternal(_span, ref _index);
+                var span = CheckCapacity(1);
+
+                span[0] = (byte)'d';
+
+                Advance(1);
             }
             catch
             {
@@ -177,9 +210,16 @@ namespace ItsyBitsy.Bencoding
         {
             _state = ExitDictionaryScope(_state, ref _scopeStack);
 
+            if (_previousKeyStack != null)
+                _previousKey = _previousKeyStack.Pop();
+
             try
             {
-                WriteDictionaryTailInternal(_span, ref _index);
+                var span = CheckCapacity(1);
+
+                span[0] = (byte)'e';
+
+                Advance(1);
             }
             catch
             {
@@ -200,15 +240,13 @@ namespace ItsyBitsy.Bencoding
         {
             _state = GetStateAfterKey(_state);
 
-            try
-            {
-                WriteStringInternal(_span, ref _index, key);
-            }
-            catch
-            {
-                _state = State.Error;
-                throw;
-            }
+            if (_previousKey.HasValue && !IsLess(_previousKey.Slice(_span), key))
+                throw new InvalidOperationException("Keys must be ordered and unique.");
+
+            WriteStringInternal(key);
+
+            if (_previousKeyStack != null)
+                _previousKey = new PreviousKeyRange(_index - key.Length, key.Length);
         }
 
         internal static State GetStateAfterValue(State state)
@@ -299,79 +337,57 @@ namespace ItsyBitsy.Bencoding
             }
         }
 
-        internal static void WriteIntegerInternal(Span<byte> span, ref int index, long value)
+        internal static bool IsLess(ReadOnlySpan<byte> x, ReadOnlySpan<byte> y)
         {
-            const string exceptionMessage = "Reached the end of the destination buffer while writing an integer.";
+            int minLength = x.Length;
+            if (minLength > y.Length)
+                minLength = y.Length;
 
-            if (span.Length - index < 1)
-                throw new ArgumentException(exceptionMessage);
+            for (int i = 0; i < minLength; ++i)
+                if (x[i] < y[i])
+                    return true;
 
-            span[index] = (byte)'i';
-            index += 1;
-
-            if (!Utf8Formatter.TryFormat(value, span.Slice(index), out int bytesWritten))
-                throw new ArgumentException(exceptionMessage);
-            index += bytesWritten;
-
-            if (span.Length - index < 1)
-                throw new ArgumentException(exceptionMessage);
-
-            span[index] = (byte)'e';
-            index += 1;
+            return x.Length < y.Length;
         }
 
-        internal static void WriteStringInternal(Span<byte> span, ref int index, ReadOnlySpan<byte> value)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private Span<byte> CheckCapacity(int capacity)
         {
-            const string exceptionMessage = "Reached the end of the destination buffer while writing a string.";
-
-            if (!Utf8Formatter.TryFormat(value.Length, span.Slice(index), out int bytesWritten))
-                throw new ArgumentException(exceptionMessage);
-            index += bytesWritten;
-
-            if (span.Length - index < 1 + value.Length)
-                throw new ArgumentException(exceptionMessage);
-
-            span[index] = (byte)':';
-            index += 1;
-
-            value.CopyTo(span.Slice(index));
-            index += value.Length;
+            var span = _span.Slice(_index);
+            if (span.Length < capacity)
+                throw new ArgumentException("Reached the end of the destination buffer while attempting to write.");
+            return span;
         }
 
-        internal static void WriteListHeadInternal(Span<byte> span, ref int index)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void Advance(int length)
         {
-            if (span.Length - index < 1)
-                throw new ArgumentException("Reached the end of the destination buffer while writing a list head.");
-
-            span[index] = (byte)'l';
-            index += 1;
+            _index += length;
         }
 
-        internal static void WriteListTailInternal(Span<byte> span, ref int index)
+        private void WriteStringInternal(ReadOnlySpan<byte> value)
         {
-            if (span.Length - index < 1)
-                throw new ArgumentException("Reached the end of the destination buffer while writing a list tail.");
+            try
+            {
+                Span<byte> numberBuffer = stackalloc byte[_intMaxDigits];
+                if (!Utf8Formatter.TryFormat(value.Length, numberBuffer, out int numberLength))
+                    throw new InvalidOperationException("Unreachable!");
 
-            span[index] = (byte)'e';
-            index += 1;
-        }
+                var span = CheckCapacity(numberLength + 1 + value.Length);
 
-        internal static void WriteDictionaryHeadInternal(Span<byte> span, ref int index)
-        {
-            if (span.Length - index < 1)
-                throw new ArgumentException("Reached the end of the destination buffer while writing a dictionary head.");
+                numberBuffer.Slice(0, numberLength).CopyTo(span);
+                span = span.Slice(numberLength);
+                span[0] = (byte)':';
+                span = span.Slice(1);
+                value.CopyTo(span);
 
-            span[index] = (byte)'d';
-            index += 1;
-        }
-
-        internal static void WriteDictionaryTailInternal(Span<byte> span, ref int index)
-        {
-            if (span.Length - index < 1)
-                throw new ArgumentException("Reached the end of the destination buffer while writing a dictionary tail.");
-
-            span[index] = (byte)'e';
-            index += 1;
+                Advance(numberLength + 1 + value.Length);
+            }
+            catch
+            {
+                _state = State.Error;
+                throw;
+            }
         }
 
         internal enum State
@@ -382,6 +398,25 @@ namespace ItsyBitsy.Bencoding
             ListItem,
             Final,
             Error,
+        }
+
+        private struct PreviousKeyRange
+        {
+            public static readonly PreviousKeyRange None = new PreviousKeyRange(-1, 0);
+
+            private readonly int _index;
+
+            private readonly int _length;
+
+            public bool HasValue => _index >= 0;
+
+            public PreviousKeyRange(int index, int length)
+            {
+                _index = index;
+                _length = length;
+            }
+
+            public ReadOnlySpan<byte> Slice(ReadOnlySpan<byte> span) => span.Slice(_index, _length);
         }
     }
 }

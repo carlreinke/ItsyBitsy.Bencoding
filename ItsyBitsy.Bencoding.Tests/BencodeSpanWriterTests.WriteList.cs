@@ -246,7 +246,7 @@ namespace ItsyBitsy.Bencoding.Tests
 
             var ex = AssertThrows<ArgumentException>(ref writer, (ref BencodeSpanWriter w) => w.WriteListHead());
 
-            Assert.Equal("Reached the end of the destination buffer while writing a list head.", ex.Message);
+            Assert.Equal("Reached the end of the destination buffer while attempting to write.", ex.Message);
         }
 
         [Fact]
@@ -284,7 +284,7 @@ namespace ItsyBitsy.Bencoding.Tests
 
             var ex = AssertThrows<ArgumentException>(ref writer, (ref BencodeSpanWriter w) => w.WriteListTail());
 
-            Assert.Equal("Reached the end of the destination buffer while writing a list tail.", ex.Message);
+            Assert.Equal("Reached the end of the destination buffer while attempting to write.", ex.Message);
         }
     }
 }

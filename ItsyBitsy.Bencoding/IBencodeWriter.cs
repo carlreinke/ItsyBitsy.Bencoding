@@ -75,7 +75,7 @@ namespace ItsyBitsy.Bencoding
         /// <exception cref="InvalidOperationException">The writer is not in a state that allows a
         ///     key to be written.</exception>
         /// <exception cref="InvalidOperationException">The writer is validating keys and the key
-        ///     being written is misordered or duplicated.</exception>
+        ///     being written is mis-ordered or duplicated.</exception>
         void WriteKey(ReadOnlySpan<byte> key);
     }
 }

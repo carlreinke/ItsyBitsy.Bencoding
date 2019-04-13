@@ -183,7 +183,7 @@ namespace ItsyBitsy.Bencoding.Tests
 
                 var ex = AssertThrows<ArgumentException>(ref writer, (ref BencodeSpanWriter w) => w.WriteInteger(value));
 
-                Assert.Equal("Reached the end of the destination buffer while writing an integer.", ex.Message);
+                Assert.Equal("Reached the end of the destination buffer while attempting to write.", ex.Message);
             }
         }
     }

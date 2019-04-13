@@ -59,6 +59,32 @@ namespace ItsyBitsy.Bencoding.Tests
             throw new Xunit.Sdk.ThrowsException(typeof(T));
         }
 
+        private delegate void BencodeSpanReaderWriterAction(ref BencodeSpanReader reader, ref BencodeSpanWriter writer);
+
+        [System.Diagnostics.DebuggerStepThrough]
+        private static T AssertThrows<T>(ref BencodeSpanReader reader, ref BencodeSpanWriter writer, BencodeSpanReaderWriterAction action)
+            where T : Exception
+        {
+            if (action == null)
+                throw new ArgumentNullException(nameof(action));
+
+            try
+            {
+                action(ref reader, ref writer);
+            }
+#pragma warning disable CA1031 // Do not catch general exception types
+            catch (Exception ex)
+            {
+                if (ex.GetType() == typeof(T))
+                    return (T)ex;
+
+                throw new Xunit.Sdk.ThrowsException(typeof(T), ex);
+            }
+#pragma warning restore CA1031 // Do not catch general exception types
+
+            throw new Xunit.Sdk.ThrowsException(typeof(T));
+        }
+
         private static void Copy(ref BencodeSpanReader reader, ref BencodeSpanWriter writer, ReadOnlySpan<BTT> tokenTypes)
         {
             foreach (var tokenType in tokenTypes)

@@ -49,7 +49,7 @@ namespace ItsyBitsy.Bencoding
         /// Initializes a new instance of the <see cref="BencodeWriter"/> class.
         /// </summary>
         /// <param name="skipValidation">If <see langword="true"/>, keys are not checked for
-        ///     misordering and duplication as they are being written.</param>
+        ///     mis-ordering and duplication as they are being written.</param>
         public BencodeWriter(bool skipValidation = false)
         {
             _buffer = Array.Empty<byte>();
@@ -62,7 +62,7 @@ namespace ItsyBitsy.Bencoding
         /// </summary>
         /// <param name="capacity">The initial capacity of the writer.</param>
         /// <param name="skipValidation">If <see langword="true"/>, keys are not checked for
-        ///     misordering and duplication as they are being written.</param>
+        ///     mis-ordering and duplication as they are being written.</param>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="capacity"/> is negative.
         ///     </exception>
         public BencodeWriter(int capacity, bool skipValidation = false)
@@ -288,7 +288,7 @@ namespace ItsyBitsy.Bencoding
         /// <exception cref="InvalidOperationException">The writer is not in a state that allows a
         ///     key to be written.</exception>
         /// <exception cref="InvalidOperationException">The writer was constructed with validation
-        ///     enabled and the key being written is misordered or duplicated.</exception>
+        ///     enabled and the key being written is mis-ordered or duplicated.</exception>
         public void WriteKey(ReadOnlySpan<byte> key)
         {
             _state = BencodeSpanWriter.GetStateAfterKey(_state);

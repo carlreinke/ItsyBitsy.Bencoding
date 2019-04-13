@@ -246,7 +246,7 @@ namespace ItsyBitsy.Bencoding.Tests
 
             var ex = AssertThrows<ArgumentException>(ref writer, (ref BencodeSpanWriter w) => w.WriteDictionaryHead());
 
-            Assert.Equal("Reached the end of the destination buffer while writing a dictionary head.", ex.Message);
+            Assert.Equal("Reached the end of the destination buffer while attempting to write.", ex.Message);
         }
 
         [Fact]
@@ -284,7 +284,77 @@ namespace ItsyBitsy.Bencoding.Tests
 
             var ex = AssertThrows<ArgumentException>(ref writer, (ref BencodeSpanWriter w) => w.WriteDictionaryTail());
 
-            Assert.Equal("Reached the end of the destination buffer while writing a dictionary tail.", ex.Message);
+            Assert.Equal("Reached the end of the destination buffer while attempting to write.", ex.Message);
+        }
+
+        ////////////////////////////////////////////////////////////////////////////////////////////
+
+        public static readonly (string bencodeString, BTT[] tokenTypes)[] KeyOrderValid_DataAndTokens = new[]
+        {
+            ("d1:ai1e2:aai2ee", new BTT[] { BTT.DictionaryHead, BTT.Key, BTT.Integer, BTT.Key, BTT.Integer, BTT.DictionaryTail }),
+            ("d1:ai1e1:bi2ee", new BTT[] { BTT.DictionaryHead, BTT.Key, BTT.Integer, BTT.Key, BTT.Integer, BTT.DictionaryTail }),
+            ("d1:bd1:ai1eee", new BTT[] { BTT.DictionaryHead, BTT.Key, BTT.DictionaryHead, BTT.Key, BTT.Integer, BTT.DictionaryTail, BTT.DictionaryTail }),
+            ("d1:ad1:ci1ee1:bi2ee", new BTT[] { BTT.DictionaryHead, BTT.Key, BTT.DictionaryHead, BTT.Key, BTT.Integer, BTT.DictionaryTail, BTT.Key, BTT.Integer, BTT.DictionaryTail }),
+        };
+
+        [Theory]
+        [TupleMemberData(nameof(KeyOrderValid_DataAndTokens))]
+        public static void WriteKey_ValidationDisabledValidKeyOrder_DoesNotThrow(string bencodeString, BTT[] tokenTypes)
+        {
+            byte[] bencode = bencodeString.ToUtf8();
+            var reader = new BencodeSpanReader(bencode);
+            byte[] buffer = new byte[bencode.Length];
+            var writer = new BencodeSpanWriter(buffer, skipValidation: true);
+
+            Copy(ref reader, ref writer, tokenTypes);
+        }
+
+        [Theory]
+        [TupleMemberData(nameof(KeyOrderValid_DataAndTokens))]
+        public static void WriteKey_ValidationEnabledValidKeyOrder_DoesNotThrow(string bencodeString, BTT[] tokenTypes)
+        {
+            byte[] bencode = bencodeString.ToUtf8();
+            var reader = new BencodeSpanReader(bencode);
+            byte[] buffer = new byte[bencode.Length];
+            var writer = new BencodeSpanWriter(buffer, skipValidation: false);
+
+            Copy(ref reader, ref writer, tokenTypes);
+        }
+
+        ////////////////////////////////////////////////////////////////////////////////////////////
+
+        public static readonly (string bencodeString, BTT[] tokenTypes)[] KeyOrderInvalid_DataAndTokens = new[]
+        {
+            ("d1:ai1e1:ai2ee", new BTT[] { BTT.DictionaryHead, BTT.Key, BTT.Integer, BTT.Key, BTT.Integer, BTT.DictionaryTail }),
+            ("d2:aai1e1:ai2ee", new BTT[] { BTT.DictionaryHead, BTT.Key, BTT.Integer, BTT.Key, BTT.Integer, BTT.DictionaryTail }),
+            ("d1:bi1e1:ai2ee", new BTT[] { BTT.DictionaryHead, BTT.Key, BTT.Integer, BTT.Key, BTT.Integer, BTT.DictionaryTail }),
+            ("d1:cd1:ai1ee1:bi2ee", new BTT[] { BTT.DictionaryHead, BTT.Key, BTT.DictionaryHead, BTT.Key, BTT.Integer, BTT.DictionaryTail, BTT.Key, BTT.Integer, BTT.DictionaryTail }),
+        };
+
+        [Theory]
+        [TupleMemberData(nameof(KeyOrderInvalid_DataAndTokens))]
+        public static void WriteKey_ValidationDisabledInvalidKeyOrder_DoesNotThrow(string bencodeString, BTT[] tokenTypes)
+        {
+            byte[] bencode = bencodeString.ToUtf8();
+            var reader = new BencodeSpanReader(bencode);
+            byte[] buffer = new byte[bencode.Length];
+            var writer = new BencodeSpanWriter(buffer, skipValidation: true);
+
+            Copy(ref reader, ref writer, tokenTypes);
+        }
+
+        [Theory]
+        [TupleMemberData(nameof(KeyOrderInvalid_DataAndTokens))]
+        public static void WriteKey_ValidationEnabledInvalidKeyOrder_ThrowsInvalidOperationException(string bencodeString, BTT[] tokenTypes)
+        {
+            byte[] bencode = bencodeString.ToUtf8();
+            var reader = new BencodeSpanReader(bencode);
+            byte[] buffer = new byte[bencode.Length];
+            var writer = new BencodeSpanWriter(buffer, skipValidation: false);
+
+            var ex = AssertThrows<InvalidOperationException>(ref reader, ref writer, (ref BencodeSpanReader r, ref BencodeSpanWriter w) => Copy(ref r, ref w, tokenTypes));
+
+            Assert.Equal("Keys must be ordered and unique.", ex.Message);
         }
     }
 }
