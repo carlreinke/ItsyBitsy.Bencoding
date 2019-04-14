@@ -24,12 +24,11 @@ namespace ItsyBitsy.Bencoding
     /// <summary>
     /// A dictionary that is optimized for ordered insertion.
     /// </summary>
-    /// <typeparam name="TPosition">The type of the positions stored in the dictionary.</typeparam>
-    public sealed class BencodeDictionary<TPosition> : IEnumerable<KeyValuePair<ReadOnlyMemory<byte>, TPosition>>
+    public sealed class BencodeDictionary : IEnumerable<KeyValuePair<ReadOnlyMemory<byte>, int>>
     {
-        private ReadOnlyMemory<byte>[] _keys;
+        private ReadOnlyMemory<byte>[] _keys = Array.Empty<ReadOnlyMemory<byte>>();
 
-        private TPosition[] _positions;
+        private int[] _positions = Array.Empty<int>();
 
         private int _count;
 
@@ -38,16 +37,16 @@ namespace ItsyBitsy.Bencoding
         /// </summary>
         public int Count => _count;
 
-        internal int Capacity => _keys?.Length ?? 0;
+        internal int Capacity => _keys.Length;
 
         /// <summary>
         /// Gets an enumerator for the elements of the dictionary.
         /// </summary>
         /// <returns>The enumerator.</returns>
-        public IEnumerator<KeyValuePair<ReadOnlyMemory<byte>, TPosition>> GetEnumerator()
+        public IEnumerator<KeyValuePair<ReadOnlyMemory<byte>, int>> GetEnumerator()
         {
             for (int i = 0; i < _count; ++i)
-                yield return new KeyValuePair<ReadOnlyMemory<byte>, TPosition>(_keys[i], _positions[i]);
+                yield return new KeyValuePair<ReadOnlyMemory<byte>, int>(_keys[i], _positions[i]);
         }
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
@@ -60,7 +59,7 @@ namespace ItsyBitsy.Bencoding
         ///     otherwise, the default value.</param>
         /// <returns><see langword="true"/> if the key exists in the dictionary; otherwise,
         ///     <see langword="false"/>.</returns>
-        public bool TryGetPosition(ReadOnlySpan<byte> key, out TPosition position)
+        public bool TryGetPosition(ReadOnlySpan<byte> key, out int position)
         {
             int index = BinarySearch(key, _count);
             if (index < 0)
@@ -73,15 +72,7 @@ namespace ItsyBitsy.Bencoding
             return true;
         }
 
-        /// <summary>
-        /// Attempts to add the specified key and the position of the associated value.
-        /// </summary>
-        /// <param name="key">The key.</param>
-        /// <param name="position">The position of the value associated with the key.</param>
-        /// <returns><see langword="true"/> if <paramref name="key"/> was added to the dictionary;
-        ///     <see langword="false"/> if the <paramref name="key"/> already exists in the
-        ///     dictionary.</returns>
-        public bool TryAdd(ReadOnlyMemory<byte> key, TPosition position)
+        internal bool TryAdd(ReadOnlyMemory<byte> key, int position)
         {
             if (_count == 0)
             {
@@ -128,7 +119,7 @@ namespace ItsyBitsy.Bencoding
             return ~left;
         }
 
-        private void InsertLast(ReadOnlyMemory<byte> key, TPosition position)
+        private void InsertLast(ReadOnlyMemory<byte> key, int position)
         {
             EnsureCapacity();
 
@@ -137,7 +128,7 @@ namespace ItsyBitsy.Bencoding
             _count += 1;
         }
 
-        private void Insert(int index, ReadOnlyMemory<byte> key, TPosition position)
+        private void Insert(int index, ReadOnlyMemory<byte> key, int position)
         {
             EnsureCapacity();
 

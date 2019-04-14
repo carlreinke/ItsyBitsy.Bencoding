@@ -103,7 +103,7 @@ namespace ItsyBitsy.Bencoding.Tests
         [Theory]
         [InlineData(0)]
         [InlineData(1)]
-        public static void Position_AfterConstructorWithMessageAndPosition_HasSpecifiedValue(long position)
+        public static void Position_AfterConstructorWithMessageAndPosition_HasSpecifiedValue(int position)
         {
             var ex = new UnsupportedBencodeException(null, position);
 
@@ -122,7 +122,7 @@ namespace ItsyBitsy.Bencoding.Tests
         [InlineData(-1)]
         [InlineData(0)]
         [InlineData(1)]
-        public static void Position_AfterSerializationRoundTrip_RetainsValue(long position)
+        public static void Position_AfterSerializationRoundTrip_RetainsValue(int position)
         {
             var ex = new UnsupportedBencodeException(null, position);
 

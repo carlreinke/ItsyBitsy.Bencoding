@@ -24,11 +24,155 @@ namespace ItsyBitsy.Bencoding.Tests
     public static partial class BencodeSpanWriterTests
     {
         [Fact]
-        public static void Length_DefaultInstance_IsZero()
+        public static void BufferedLength_DefaultInstance_IsZero()
         {
             BencodeSpanWriter writer = default;
 
-            Assert.Equal(0, writer.Length);
+            Assert.Equal(0, writer.BufferedLength);
+        }
+
+        [Fact]
+        public static void BufferedLength_WithSpanAfterFlush_IsUnchanged()
+        {
+            byte[] buffer = new byte[5];
+            var writer = new BencodeSpanWriter(buffer.AsSpan());
+
+            writer.WriteInteger(1);
+            int bufferedLengthBeforeFlush = writer.BufferedLength;
+            writer.Flush();
+
+            Assert.NotEqual(0, bufferedLengthBeforeFlush);
+            Assert.Equal(bufferedLengthBeforeFlush, writer.BufferedLength);
+        }
+
+        [Fact]
+        public static void BufferedLength_WithBufferWriterAfterFlush_IsZero()
+        {
+            var buffer = new FixedLengthBufferWriter(5);
+            var writer = new BencodeSpanWriter(buffer);
+
+            writer.WriteInteger(1);
+            int bufferedLengthBeforeFlush = writer.BufferedLength;
+            writer.Flush();
+
+            Assert.NotEqual(0, bufferedLengthBeforeFlush);
+            Assert.Equal(0, writer.BufferedLength);
+        }
+
+        [Fact]
+        public static void BufferedLength_CreatedFromBencodeWriterAfterFlush_IsZero()
+        {
+            var buffer = new FixedLengthBufferWriter(5);
+            var parentWriter = new BencodeWriter(buffer);
+            var writer = parentWriter.CreateSpanWriter();
+
+            writer.WriteInteger(1);
+            int bufferedLengthBeforeFlush = writer.BufferedLength;
+            writer.Flush();
+
+            Assert.NotEqual(0, bufferedLengthBeforeFlush);
+            Assert.Equal(0, writer.BufferedLength);
+        }
+
+        ////////////////////////////////////////////////////////////////////////////////////////////
+
+        [Fact]
+        public static void Dispose_ConstructedWithBuffer_GoesToDisposedState()
+        {
+            var buffer = new FixedLengthBufferWriter(2);
+            var writer = new BencodeSpanWriter(buffer);
+
+            writer.Dispose();
+
+            var ex = AssertThrows<InvalidOperationException>(ref writer, (ref BencodeSpanWriter w) => w.WriteListHead());
+
+            Assert.Equal("The writer is not in a state that allows a list head to be written.", ex.Message);
+        }
+
+        [Fact]
+        public static void Dispose_CreatedFromBencodeWriter_GoesToDisposedState()
+        {
+            var buffer = new FixedLengthBufferWriter(2);
+            var parentWriter = new BencodeWriter(buffer);
+            var writer = parentWriter.CreateSpanWriter();
+
+            writer.Dispose();
+
+            var ex = AssertThrows<InvalidOperationException>(ref writer, (ref BencodeSpanWriter w) => w.WriteListHead());
+
+            Assert.Equal("The writer is not in a state that allows a list head to be written.", ex.Message);
+        }
+
+        [Fact]
+        public static void Dispose_TwiceCreatedFromBencodeWriter_DoesNothing()
+        {
+            var buffer = new FixedLengthBufferWriter(2);
+            var parentWriter = new BencodeWriter(buffer);
+            var writer = parentWriter.CreateSpanWriter();
+
+            writer.Dispose();
+
+            parentWriter.WriteListHead();
+
+            writer.Dispose();
+
+            parentWriter.WriteListTail();
+        }
+
+        ////////////////////////////////////////////////////////////////////////////////////////////
+
+        [Theory]
+        [TupleMemberData(nameof(BencodeTestData.CompleteValue_DataAndTokens), MemberType = typeof(BencodeTestData))]
+        public static void Flush_CompleteValueNotFinal_DoesNotThrow(string bencodeString, BTT[] tokenTypes)
+        {
+            byte[] bencode = bencodeString.ToUtf8();
+            var reader = new BencodeSpanReader(bencode);
+            var buffer = new FixedLengthBufferWriter(bencode.Length);
+            var writer = new BencodeSpanWriter(buffer);
+
+            Copy(ref reader, ref writer, tokenTypes);
+            writer.Flush(final: true);
+        }
+
+        [Theory]
+        [TupleMemberData(nameof(BencodeTestData.CompleteValue_DataAndTokens), MemberType = typeof(BencodeTestData))]
+        public static void Flush_CompleteValueFinal_DoesNotThrow(string bencodeString, BTT[] tokenTypes)
+        {
+            byte[] bencode = bencodeString.ToUtf8();
+            var reader = new BencodeSpanReader(bencode);
+            var buffer = new FixedLengthBufferWriter(bencode.Length);
+            var writer = new BencodeSpanWriter(buffer);
+
+            Copy(ref reader, ref writer, tokenTypes);
+            writer.Flush(final: true);
+        }
+
+        [Theory]
+        [TupleMemberData(nameof(BencodeTestData.IncompleteValue_DataAndTokens), MemberType = typeof(BencodeTestData))]
+        public static void Flush_IncompleteValueNotFinal_DoesNotThrow(string bencodeString, BTT[] tokenTypes)
+        {
+            byte[] bencode = bencodeString.ToUtf8();
+            var reader = new BencodeSpanReader(bencode);
+            var buffer = new FixedLengthBufferWriter(bencode.Length);
+            var writer = new BencodeSpanWriter(buffer);
+
+            Copy(ref reader, ref writer, tokenTypes);
+            writer.Flush(final: false);
+        }
+
+        [Theory]
+        [TupleMemberData(nameof(BencodeTestData.IncompleteValue_DataAndTokens), MemberType = typeof(BencodeTestData))]
+        public static void Flush_IncompleteValueFinal_ThrowsInvalidOperationException(string bencodeString, BTT[] tokenTypes)
+        {
+            byte[] bencode = bencodeString.ToUtf8();
+            var reader = new BencodeSpanReader(bencode);
+            var buffer = new FixedLengthBufferWriter(bencode.Length);
+            var writer = new BencodeSpanWriter(buffer);
+
+            Copy(ref reader, ref writer, tokenTypes);
+            var ex = AssertThrows<InvalidOperationException>(ref writer, (ref BencodeSpanWriter w) => w.Flush(final: true));
+
+            Assert.Equal("The value is incomplete.", ex.Message);
         }
 
         ////////////////////////////////////////////////////////////////////////////////////////////
@@ -85,7 +229,7 @@ namespace ItsyBitsy.Bencoding.Tests
             throw new Xunit.Sdk.ThrowsException(typeof(T));
         }
 
-        private static void Copy(ref BencodeSpanReader reader, ref BencodeSpanWriter writer, ReadOnlySpan<BTT> tokenTypes)
+        internal static void Copy(ref BencodeSpanReader reader, ref BencodeSpanWriter writer, ReadOnlySpan<BTT> tokenTypes)
         {
             foreach (var tokenType in tokenTypes)
             {

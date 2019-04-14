@@ -21,32 +21,18 @@ using BTT = ItsyBitsy.Bencoding.BencodeTokenType;
 
 namespace ItsyBitsy.Bencoding.Tests
 {
-    public partial class BencodeReaderTests : BencodeReaderTestsBase
+    public partial class BencodeReaderTests
     {
         [Fact]
-        public void CanSeek_Always_ReturnsTrue()
+        public static void Position_NewInstance_IsZero()
         {
             var reader = new BencodeReader("i1e".ToUtf8());
 
-            bool canSeek = reader.CanSeek;
-
-            Assert.True(canSeek);
-        }
-
-        ////////////////////////////////////////////////////////////////////////////////////////////
-
-        [Fact]
-        public void NonInterfacePosition_NewInstance_IsZero()
-        {
-            var reader = new BencodeReader("i1e".ToUtf8());
-
-            int position = reader.Position;
-
-            Assert.Equal(0, position);
+            Assert.Equal(0, reader.Position);
         }
 
         [Fact]
-        public void NonInterfacePosition_NegativeValue_ThrowsArgumentOutOfRangeException()
+        public static void Position_NegativeValue_ThrowsArgumentOutOfRangeException()
         {
             byte[] bencode = "i1e".ToUtf8();
             var reader = new BencodeReader(bencode);
@@ -58,7 +44,7 @@ namespace ItsyBitsy.Bencoding.Tests
 
         [Theory]
         [TupleMemberData(nameof(BencodeTestData.Position_DataAndPosition), MemberType = typeof(BencodeTestData))]
-        public void NonInterfacePosition_PositiveValue_ReturnsValueSet(string bencodeString, int position)
+        public static void Position_PositiveValue_ReturnsValueSet(string bencodeString, int position)
         {
             byte[] bencode = bencodeString.ToUtf8();
             var reader = new BencodeReader(bencode);
@@ -70,7 +56,7 @@ namespace ItsyBitsy.Bencoding.Tests
 
         [Theory]
         [TupleMemberData(nameof(BencodeTestData.Position_DataAndPositionAndTokens), MemberType = typeof(BencodeTestData))]
-        public void NonInterfacePosition_ValidValue_AffectsTokenType(string bencodeString, int position, BTT[] tokenTypes)
+        public static void Position_ValidValue_AffectsTokenType(string bencodeString, int position, BTT[] tokenTypes)
         {
             byte[] bencode = bencodeString.ToUtf8();
             var reader = new BencodeReader(bencode);
@@ -82,40 +68,94 @@ namespace ItsyBitsy.Bencoding.Tests
 
         ////////////////////////////////////////////////////////////////////////////////////////////
 
-        [Theory]
-        [TupleMemberData(nameof(BencodeTestData.ReadString_ValidData_DataAndValue), MemberType = typeof(BencodeTestData))]
-        public void NonInterfaceReadString_ValidData_ReturnsValue(string bencodeString, string expectedValueString)
+        [Fact]
+        public static void CreateSpanWriter_Always_GoesToErrorState()
         {
-            byte[] expectedValue = expectedValueString.ToUtf8();
+            byte[] bencode = "le".ToUtf8();
+            var reader = new BencodeReader(bencode);
+            var spanReader = reader.CreateSpanReader();
+
+            var ex = Assert.Throws<InvalidOperationException>(() => reader.ReadListHead());
+
+            Assert.Equal("The reader is not in a state that allows a list head to be read.", ex.Message);
+        }
+
+        [Theory]
+        [TupleMemberData(nameof(BencodeTestData.CreateSpan_DataAndTokens), MemberType = typeof(BencodeTestData))]
+        public static void CreateSpanReader_Always_CanReadPartsOfValue(string bencodeString, BTT[] tokenTypes1, BTT[] tokenTypes2, BTT[] tokenTypes3)
+        {
             byte[] bencode = bencodeString.ToUtf8();
             var reader = new BencodeReader(bencode);
+            Expect(reader, tokenTypes1);
 
-            var value = reader.ReadString();
+            var spanReader = reader.CreateSpanReader();
+            BencodeSpanReaderTests.Expect(ref spanReader, tokenTypes2);
+            spanReader.Dispose();
 
-            Assert.Equal(expectedValue, value.ToArray());
+            Expect(reader, tokenTypes3);
         }
 
         ////////////////////////////////////////////////////////////////////////////////////////////
 
-        [Theory]
-        [TupleMemberData(nameof(BencodeTestData.ReadString_ValidData_DataAndValue), MemberType = typeof(BencodeTestData))]
-        public void NonInterfaceReadKey_ValidData_ReturnsValue(string bencodeString, string expectedValueString)
+        private delegate void BencodeSpanWriterAction(ref BencodeSpanWriter writer);
+
+        [System.Diagnostics.DebuggerStepThrough]
+        private static T AssertThrows<T>(ref BencodeSpanWriter writer, BencodeSpanWriterAction action)
+            where T : Exception
         {
-            byte[] expectedValue = expectedValueString.ToUtf8();
-            byte[] bencode = $"d{bencodeString}i1ee".ToUtf8();
-            var reader = new BencodeReader(bencode);
-            reader.ReadDictionaryHead();
+            if (action == null)
+                throw new ArgumentNullException(nameof(action));
 
-            var value = reader.ReadKey();
+            try
+            {
+                action(ref writer);
+            }
+#pragma warning disable CA1031 // Do not catch general exception types
+            catch (Exception ex)
+            {
+                if (ex.GetType() == typeof(T))
+                    return (T)ex;
 
-            Assert.Equal(expectedValue, value.ToArray());
+                throw new Xunit.Sdk.ThrowsException(typeof(T), ex);
+            }
+#pragma warning restore CA1031 // Do not catch general exception types
+
+            throw new Xunit.Sdk.ThrowsException(typeof(T));
         }
 
-        ////////////////////////////////////////////////////////////////////////////////////////////
-
-        protected override IBencodeReader CreateReader(byte[] bencode)
+        protected static void Expect(BencodeReader reader, ReadOnlySpan<BTT> tokenTypes)
         {
-            return new BencodeReader(bencode);
+            foreach (var tokenType in tokenTypes)
+            {
+                Assert.Equal(tokenType, reader.ReadTokenType());
+
+                switch (tokenType)
+                {
+                    case BTT.None:
+                        break;
+                    case BTT.Integer:
+                        reader.ReadInteger();
+                        break;
+                    case BTT.String:
+                        reader.ReadString();
+                        break;
+                    case BTT.ListHead:
+                        reader.ReadListHead();
+                        break;
+                    case BTT.ListTail:
+                        reader.ReadListTail();
+                        break;
+                    case BTT.DictionaryHead:
+                        reader.ReadDictionaryHead();
+                        break;
+                    case BTT.DictionaryTail:
+                        reader.ReadDictionaryTail();
+                        break;
+                    case BTT.Key:
+                        reader.ReadKey();
+                        break;
+                }
+            }
         }
     }
 }

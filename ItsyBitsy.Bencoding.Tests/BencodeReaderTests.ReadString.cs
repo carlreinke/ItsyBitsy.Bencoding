@@ -21,7 +21,7 @@ using BTT = ItsyBitsy.Bencoding.BencodeTokenType;
 
 namespace ItsyBitsy.Bencoding.Tests
 {
-    public partial class BencodeSpanReaderTests
+    public partial class BencodeReaderTests
     {
         [Theory]
         [TupleMemberData(nameof(BencodeTestData.InDictionaryKeyState_DataAndTokens), MemberType = typeof(BencodeTestData))]
@@ -29,10 +29,10 @@ namespace ItsyBitsy.Bencoding.Tests
         public static void ReadStringLength_InInvalidState_ThrowsInvalidOperationException(string bencodeString, BTT[] tokenTypes)
         {
             byte[] bencode = bencodeString.ToUtf8();
-            var reader = new BencodeSpanReader(bencode);
-            Expect(ref reader, tokenTypes);
+            var reader = new BencodeReader(bencode);
+            Expect(reader, tokenTypes);
 
-            var ex = AssertThrows<InvalidOperationException>(ref reader, (ref BencodeSpanReader r) => _ = r.ReadStringLength());
+            var ex = Assert.Throws<InvalidOperationException>(() => _ = reader.ReadStringLength());
 
             Assert.Equal("The reader is not in a state that allows a value to be read.", ex.Message);
         }
@@ -41,10 +41,10 @@ namespace ItsyBitsy.Bencoding.Tests
         public static void ReadStringLength_InErrorState_ThrowsInvalidOperationException()
         {
             byte[] bencode = "1:a".ToUtf8();
-            var reader = new BencodeSpanReader(bencode);
-            _ = AssertThrows<InvalidBencodeException>(ref reader, (ref BencodeSpanReader r) => _ = r.ReadInteger());
+            var reader = new BencodeReader(bencode);
+            _ = Assert.Throws<InvalidBencodeException>(() => _ = reader.ReadInteger());
 
-            var ex = AssertThrows<InvalidOperationException>(ref reader, (ref BencodeSpanReader r) => _ = r.ReadStringLength());
+            var ex = Assert.Throws<InvalidOperationException>(() => _ = reader.ReadStringLength());
 
             Assert.Equal("The reader is not in a state that allows a value to be read.", ex.Message);
         }
@@ -55,10 +55,10 @@ namespace ItsyBitsy.Bencoding.Tests
         public static void ReadString_InInvalidState_ThrowsInvalidOperationException(string bencodeString, BTT[] tokenTypes)
         {
             byte[] bencode = bencodeString.ToUtf8();
-            var reader = new BencodeSpanReader(bencode);
-            Expect(ref reader, tokenTypes);
+            var reader = new BencodeReader(bencode);
+            Expect(reader, tokenTypes);
 
-            var ex = AssertThrows<InvalidOperationException>(ref reader, (ref BencodeSpanReader r) => _ = r.ReadString());
+            var ex = Assert.Throws<InvalidOperationException>(() => _ = reader.ReadString());
 
             Assert.Equal("The reader is not in a state that allows a value to be read.", ex.Message);
         }
@@ -67,10 +67,10 @@ namespace ItsyBitsy.Bencoding.Tests
         public static void ReadString_InErrorState_ThrowsInvalidOperationException()
         {
             byte[] bencode = "1:a".ToUtf8();
-            var reader = new BencodeSpanReader(bencode);
-            _ = AssertThrows<InvalidBencodeException>(ref reader, (ref BencodeSpanReader r) => _ = r.ReadInteger());
+            var reader = new BencodeReader(bencode);
+            _ = Assert.Throws<InvalidBencodeException>(() => _ = reader.ReadInteger());
 
-            var ex = AssertThrows<InvalidOperationException>(ref reader, (ref BencodeSpanReader r) => _ = r.ReadString());
+            var ex = Assert.Throws<InvalidOperationException>(() => _ = reader.ReadString());
 
             Assert.Equal("The reader is not in a state that allows a value to be read.", ex.Message);
         }
@@ -83,7 +83,7 @@ namespace ItsyBitsy.Bencoding.Tests
         {
             byte[] expectedValue = expectedValueString.ToUtf8();
             byte[] bencode = bencodeString.ToUtf8();
-            var reader = new BencodeSpanReader(bencode);
+            var reader = new BencodeReader(bencode);
 
             int length = reader.ReadStringLength();
 
@@ -96,7 +96,7 @@ namespace ItsyBitsy.Bencoding.Tests
         {
             byte[] expectedValue = expectedValueString.ToUtf8();
             byte[] bencode = $"l{bencodeString}e".ToUtf8();
-            var reader = new BencodeSpanReader(bencode);
+            var reader = new BencodeReader(bencode);
             reader.ReadListHead();
 
             int length = reader.ReadStringLength();
@@ -110,7 +110,7 @@ namespace ItsyBitsy.Bencoding.Tests
         {
             byte[] expectedValue = expectedValueString.ToUtf8();
             byte[] bencode = $"d0:{bencodeString}e".ToUtf8();
-            var reader = new BencodeSpanReader(bencode);
+            var reader = new BencodeReader(bencode);
             reader.ReadDictionaryHead();
             reader.SkipKey();
 
@@ -125,7 +125,7 @@ namespace ItsyBitsy.Bencoding.Tests
         {
             byte[] expectedValue = expectedValueString.ToUtf8();
             byte[] bencode = bencodeString.ToUtf8();
-            var reader = new BencodeSpanReader(bencode);
+            var reader = new BencodeReader(bencode);
 
             var value = reader.ReadString();
 
@@ -138,7 +138,7 @@ namespace ItsyBitsy.Bencoding.Tests
         {
             byte[] expectedValue = expectedValueString.ToUtf8();
             byte[] bencode = $"l{bencodeString}e".ToUtf8();
-            var reader = new BencodeSpanReader(bencode);
+            var reader = new BencodeReader(bencode);
             reader.ReadListHead();
 
             var value = reader.ReadString();
@@ -152,7 +152,7 @@ namespace ItsyBitsy.Bencoding.Tests
         {
             byte[] expectedValue = expectedValueString.ToUtf8();
             byte[] bencode = $"d0:{bencodeString}e".ToUtf8();
-            var reader = new BencodeSpanReader(bencode);
+            var reader = new BencodeReader(bencode);
             reader.ReadDictionaryHead();
             reader.SkipKey();
 
@@ -167,7 +167,7 @@ namespace ItsyBitsy.Bencoding.Tests
         {
             byte[] expectedValue = expectedValueString.ToUtf8();
             byte[] bencode = bencodeString.ToUtf8();
-            var reader = new BencodeSpanReader(bencode);
+            var reader = new BencodeReader(bencode);
             _ = reader.ReadStringLength();
 
             var value = reader.ReadString();
@@ -180,7 +180,7 @@ namespace ItsyBitsy.Bencoding.Tests
         public static void ReadString_ValidData_GoesToFinalState(string bencodeString)
         {
             byte[] bencode = bencodeString.ToUtf8();
-            var reader = new BencodeSpanReader(bencode);
+            var reader = new BencodeReader(bencode);
 
             _ = reader.ReadString();
             var tokenType = reader.ReadTokenType();
@@ -193,7 +193,7 @@ namespace ItsyBitsy.Bencoding.Tests
         public static void ReadString_ValidDataInList_GoesToValueState(string bencodeString)
         {
             byte[] bencode = $"l{bencodeString}e".ToUtf8();
-            var reader = new BencodeSpanReader(bencode);
+            var reader = new BencodeReader(bencode);
             reader.ReadListHead();
 
             _ = reader.ReadString();
@@ -207,7 +207,7 @@ namespace ItsyBitsy.Bencoding.Tests
         public static void ReadString_ValidDataInDictionary_GoesToKeyState(string bencodeString)
         {
             byte[] bencode = $"d0:{bencodeString}e".ToUtf8();
-            var reader = new BencodeSpanReader(bencode);
+            var reader = new BencodeReader(bencode);
             reader.ReadDictionaryHead();
             reader.SkipKey();
 
@@ -224,7 +224,7 @@ namespace ItsyBitsy.Bencoding.Tests
         public static void ReadStringLength_ValidData_PositionIsUnchanged(string bencodeString)
         {
             byte[] bencode = bencodeString.ToUtf8();
-            var reader = new BencodeSpanReader(bencode);
+            var reader = new BencodeReader(bencode);
             int position = reader.Position;
 
             _ = reader.ReadStringLength();
@@ -237,7 +237,7 @@ namespace ItsyBitsy.Bencoding.Tests
         public static void ReadStringLength_ValidDataInList_PositionIsUnchanged(string bencodeString)
         {
             byte[] bencode = $"l{bencodeString}e".ToUtf8();
-            var reader = new BencodeSpanReader(bencode);
+            var reader = new BencodeReader(bencode);
             reader.ReadListHead();
             int position = reader.Position;
 
@@ -251,7 +251,7 @@ namespace ItsyBitsy.Bencoding.Tests
         public static void ReadStringLength_ValidDataInDictionary_PositionIsUnchanged(string bencodeString)
         {
             byte[] bencode = $"d0:{bencodeString}e".ToUtf8();
-            var reader = new BencodeSpanReader(bencode);
+            var reader = new BencodeReader(bencode);
             reader.ReadDictionaryHead();
             reader.SkipKey();
             int position = reader.Position;
@@ -266,7 +266,7 @@ namespace ItsyBitsy.Bencoding.Tests
         public static void ReadString_ValidData_PositionIsAfterString(string bencodeString)
         {
             byte[] bencode = bencodeString.ToUtf8();
-            var reader = new BencodeSpanReader(bencode);
+            var reader = new BencodeReader(bencode);
 
             _ = reader.ReadString();
 
@@ -278,7 +278,7 @@ namespace ItsyBitsy.Bencoding.Tests
         public static void ReadString_ValidDataInList_PositionIsAfterString(string bencodeString)
         {
             byte[] bencode = $"l{bencodeString}e".ToUtf8();
-            var reader = new BencodeSpanReader(bencode);
+            var reader = new BencodeReader(bencode);
             reader.ReadListHead();
 
             _ = reader.ReadString();
@@ -291,7 +291,7 @@ namespace ItsyBitsy.Bencoding.Tests
         public static void ReadString_ValidDataInDictionary_PositionIsAfterString(string bencodeString)
         {
             byte[] bencode = $"d0:{bencodeString}e".ToUtf8();
-            var reader = new BencodeSpanReader(bencode);
+            var reader = new BencodeReader(bencode);
             reader.ReadDictionaryHead();
             reader.SkipKey();
 
@@ -305,7 +305,7 @@ namespace ItsyBitsy.Bencoding.Tests
         public static void ReadString_ValidDataAfterReadStringLength_PositionIsAfterString(string bencodeString)
         {
             byte[] bencode = bencodeString.ToUtf8();
-            var reader = new BencodeSpanReader(bencode);
+            var reader = new BencodeReader(bencode);
             _ = reader.ReadStringLength();
 
             _ = reader.ReadString();
@@ -321,9 +321,9 @@ namespace ItsyBitsy.Bencoding.Tests
         public static void ReadStringLength_InvalidHeadData_ThrowsInvalidBencodeExceptionAndGoesToErrorState(string bencodeString, string errorMessage, int errorPosition)
         {
             byte[] bencode = bencodeString.ToUtf8();
-            var reader = new BencodeSpanReader(bencode);
+            var reader = new BencodeReader(bencode);
 
-            var ex = AssertThrows<InvalidBencodeException>(ref reader, (ref BencodeSpanReader r) => _ = r.ReadStringLength());
+            var ex = Assert.Throws<InvalidBencodeException>(() => _ = reader.ReadStringLength());
             int position = reader.Position;
             var errorTokenType = reader.ReadTokenType();
 
@@ -338,7 +338,7 @@ namespace ItsyBitsy.Bencoding.Tests
         public static void ReadStringLength_MissingBodyData_ReturnsLength(string bencodeString, int expectedLength)
         {
             byte[] bencode = bencodeString.ToUtf8();
-            var reader = new BencodeSpanReader(bencode);
+            var reader = new BencodeReader(bencode);
 
             int length = reader.ReadStringLength();
 
@@ -350,10 +350,10 @@ namespace ItsyBitsy.Bencoding.Tests
         public static void ReadStringLength_MissingHeadDataInList_ThrowsInvalidBencodeExceptionAndGoesToErrorState(string bencodeString, string errorMessage, int errorPosition)
         {
             byte[] bencode = $"l{bencodeString}".ToUtf8();
-            var reader = new BencodeSpanReader(bencode);
+            var reader = new BencodeReader(bencode);
             reader.ReadListHead();
 
-            var ex = AssertThrows<InvalidBencodeException>(ref reader, (ref BencodeSpanReader r) => _ = r.ReadStringLength());
+            var ex = Assert.Throws<InvalidBencodeException>(() => _ = reader.ReadStringLength());
             int position = reader.Position;
             var errorTokenType = reader.ReadTokenType();
 
@@ -368,10 +368,10 @@ namespace ItsyBitsy.Bencoding.Tests
         public static void ReadStringLength_InvalidHeadDataInList_ThrowsInvalidBencodeExceptionAndGoesToErrorState(string bencodeString, string errorMessage, int errorPosition)
         {
             byte[] bencode = $"l{bencodeString}e".ToUtf8();
-            var reader = new BencodeSpanReader(bencode);
+            var reader = new BencodeReader(bencode);
             reader.ReadListHead();
 
-            var ex = AssertThrows<InvalidBencodeException>(ref reader, (ref BencodeSpanReader r) => _ = r.ReadStringLength());
+            var ex = Assert.Throws<InvalidBencodeException>(() => _ = reader.ReadStringLength());
             int position = reader.Position;
             var errorTokenType = reader.ReadTokenType();
 
@@ -386,7 +386,7 @@ namespace ItsyBitsy.Bencoding.Tests
         public static void ReadStringLength_MissingBodyDataInList_ReturnsLength(string bencodeString, int expectedLength)
         {
             byte[] bencode = $"l{bencodeString}".ToUtf8();
-            var reader = new BencodeSpanReader(bencode);
+            var reader = new BencodeReader(bencode);
             reader.ReadListHead();
 
             int length = reader.ReadStringLength();
@@ -401,9 +401,9 @@ namespace ItsyBitsy.Bencoding.Tests
         public static void ReadString_InvalidData_ThrowsInvalidBencodeExceptionAndGoesToErrorState(string bencodeString, string errorMessage, int errorPosition)
         {
             byte[] bencode = bencodeString.ToUtf8();
-            var reader = new BencodeSpanReader(bencode);
+            var reader = new BencodeReader(bencode);
 
-            var ex = AssertThrows<InvalidBencodeException>(ref reader, (ref BencodeSpanReader r) => _ = r.ReadString());
+            var ex = Assert.Throws<InvalidBencodeException>(() => _ = reader.ReadString());
             int position = reader.Position;
             var errorTokenType = reader.ReadTokenType();
 
@@ -419,10 +419,10 @@ namespace ItsyBitsy.Bencoding.Tests
         public static void ReadString_MissingDataInList_ThrowsInvalidBencodeExceptionAndGoesToErrorState(string bencodeString, string errorMessage, int errorPosition)
         {
             byte[] bencode = $"l{bencodeString}".ToUtf8();
-            var reader = new BencodeSpanReader(bencode);
+            var reader = new BencodeReader(bencode);
             reader.ReadListHead();
 
-            var ex = AssertThrows<InvalidBencodeException>(ref reader, (ref BencodeSpanReader r) => _ = r.ReadString());
+            var ex = Assert.Throws<InvalidBencodeException>(() => _ = reader.ReadString());
             int position = reader.Position;
             var errorTokenType = reader.ReadTokenType();
 
@@ -437,10 +437,10 @@ namespace ItsyBitsy.Bencoding.Tests
         public static void ReadString_InvalidDataInList_ThrowsInvalidBencodeExceptionAndGoesToErrorState(string bencodeString, string errorMessage, int errorPosition)
         {
             byte[] bencode = $"l{bencodeString}e".ToUtf8();
-            var reader = new BencodeSpanReader(bencode);
+            var reader = new BencodeReader(bencode);
             reader.ReadListHead();
 
-            var ex = AssertThrows<InvalidBencodeException>(ref reader, (ref BencodeSpanReader r) => _ = r.ReadString());
+            var ex = Assert.Throws<InvalidBencodeException>(() => _ = reader.ReadString());
             int position = reader.Position;
             var errorTokenType = reader.ReadTokenType();
 
@@ -455,10 +455,10 @@ namespace ItsyBitsy.Bencoding.Tests
         public static void ReadString_MissingBodyDataAfterReadStringLength_ThrowsInvalidBencodeExceptionAndGoesToErrorState(string bencodeString, string errorMessage, int errorPosition)
         {
             byte[] bencode = bencodeString.ToUtf8();
-            var reader = new BencodeSpanReader(bencode);
+            var reader = new BencodeReader(bencode);
             _ = reader.ReadStringLength();
 
-            var ex = AssertThrows<InvalidBencodeException>(ref reader, (ref BencodeSpanReader r) => _ = r.ReadString());
+            var ex = Assert.Throws<InvalidBencodeException>(() => _ = reader.ReadString());
             int position = reader.Position;
             var errorTokenType = reader.ReadTokenType();
 
@@ -475,7 +475,7 @@ namespace ItsyBitsy.Bencoding.Tests
         public static void ReadStringLength_MissingBodyData_PositionIsUnchanged(string bencodeString)
         {
             byte[] bencode = bencodeString.ToUtf8();
-            var reader = new BencodeSpanReader(bencode);
+            var reader = new BencodeReader(bencode);
             int position = reader.Position;
 
             _ = reader.ReadStringLength();
@@ -488,7 +488,7 @@ namespace ItsyBitsy.Bencoding.Tests
         public static void ReadStringLength_MissingBodyDataInList_PositionIsUnchanged(string bencodeString)
         {
             byte[] bencode = $"l{bencodeString}".ToUtf8();
-            var reader = new BencodeSpanReader(bencode);
+            var reader = new BencodeReader(bencode);
             reader.ReadListHead();
             int position = reader.Position;
 
@@ -504,9 +504,9 @@ namespace ItsyBitsy.Bencoding.Tests
         public static void ReadStringLength_UnsupportedData_ThrowsUnsupportedBencodeExceptionAndGoesToErrorState(string bencodeString, string errorMessage, int errorPosition, int expectedPosition)
         {
             byte[] bencode = bencodeString.ToUtf8();
-            var reader = new BencodeSpanReader(bencode);
+            var reader = new BencodeReader(bencode);
 
-            var ex = AssertThrows<UnsupportedBencodeException>(ref reader, (ref BencodeSpanReader r) => _ = r.ReadStringLength());
+            var ex = Assert.Throws<UnsupportedBencodeException>(() => _ = reader.ReadStringLength());
             int position = reader.Position;
             var errorTokenType = reader.ReadTokenType();
 
@@ -521,10 +521,10 @@ namespace ItsyBitsy.Bencoding.Tests
         public static void ReadStringLength_UnsupportedDataInList_ThrowsUnsupportedBencodeExceptionAndGoesToErrorState(string bencodeString, string errorMessage, int errorPosition, int expectedPosition)
         {
             byte[] bencode = $"l{bencodeString}e".ToUtf8();
-            var reader = new BencodeSpanReader(bencode);
+            var reader = new BencodeReader(bencode);
             reader.ReadListHead();
 
-            var ex = AssertThrows<UnsupportedBencodeException>(ref reader, (ref BencodeSpanReader r) => _ = r.ReadStringLength());
+            var ex = Assert.Throws<UnsupportedBencodeException>(() => _ = reader.ReadStringLength());
             int position = reader.Position;
             var errorTokenType = reader.ReadTokenType();
 
@@ -539,9 +539,9 @@ namespace ItsyBitsy.Bencoding.Tests
         public static void ReadString_UnsupportedData_ThrowsUnsupportedBencodeExceptionAndGoesToErrorState(string bencodeString, string errorMessage, int errorPosition, int expectedPosition)
         {
             byte[] bencode = bencodeString.ToUtf8();
-            var reader = new BencodeSpanReader(bencode);
+            var reader = new BencodeReader(bencode);
 
-            var ex = AssertThrows<UnsupportedBencodeException>(ref reader, (ref BencodeSpanReader r) => _ = r.ReadString());
+            var ex = Assert.Throws<UnsupportedBencodeException>(() => _ = reader.ReadString());
             int position = reader.Position;
             var errorTokenType = reader.ReadTokenType();
 
@@ -556,10 +556,10 @@ namespace ItsyBitsy.Bencoding.Tests
         public static void ReadString_UnsupportedDataInList_ThrowsUnsupportedBencodeExceptionAndGoesToErrorState(string bencodeString, string errorMessage, int errorPosition, int expectedPosition)
         {
             byte[] bencode = $"l{bencodeString}e".ToUtf8();
-            var reader = new BencodeSpanReader(bencode);
+            var reader = new BencodeReader(bencode);
             reader.ReadListHead();
 
-            var ex = AssertThrows<UnsupportedBencodeException>(ref reader, (ref BencodeSpanReader r) => _ = r.ReadString());
+            var ex = Assert.Throws<UnsupportedBencodeException>(() => _ = reader.ReadString());
             int position = reader.Position;
             var errorTokenType = reader.ReadTokenType();
 

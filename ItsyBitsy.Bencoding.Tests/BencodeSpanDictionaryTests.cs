@@ -49,7 +49,7 @@ namespace ItsyBitsy.Bencoding.Tests
             BencodeSpanDictionary dictionary = default;
 
             int i = 0;
-            foreach (var element in dictionary)
+            foreach (var _ in dictionary)
                 i += 1;
             Assert.Equal(0, i);
         }

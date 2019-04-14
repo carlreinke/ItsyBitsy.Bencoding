@@ -23,6 +23,26 @@ namespace ItsyBitsy.Bencoding.Tests
 {
     public static partial class BencodeTestData
     {
+        public static readonly (string bencodeString, BTT[] tokenTypes)[] CompleteValue_DataAndTokens = new[]
+        {
+            ("i1e", new BTT[] { BTT.Integer }),
+            ("1:a", new BTT[] { BTT.String }),
+            ("le", new BTT[] { BTT.ListHead, BTT.ListTail }),
+            ("de", new BTT[] { BTT.DictionaryHead, BTT.DictionaryTail }),
+        };
+
+        public static readonly (string bencodeString, BTT[] tokenTypes)[] IncompleteValue_DataAndTokens = new[]
+        {
+            ("", new BTT[0]),
+            ("l", new BTT[] { BTT.ListHead }),
+            ("lle", new BTT[] { BTT.ListHead, BTT.ListHead, BTT.ListTail }),
+            ("d", new BTT[] { BTT.DictionaryHead }),
+            ("d1:a", new BTT[] { BTT.DictionaryHead, BTT.Key }),
+            ("d1:ade", new BTT[] { BTT.DictionaryHead, BTT.Key, BTT.DictionaryHead, BTT.DictionaryTail }),
+        };
+
+        ////////////////////////////////////////////////////////////////////////////////////////////
+
         public static readonly (string bencodeString, BTT[])[] InInitialState_DataAndTokens = new[]
         {
             ("", new BTT[0]),
@@ -64,5 +84,25 @@ namespace ItsyBitsy.Bencoding.Tests
 
         public static readonly IEnumerable<(string bencodeString, int position)> Position_DataAndPosition = Position_DataAndPositionAndTokens
             .Select(x => (x.bencodeString, x.position));
+
+        ////////////////////////////////////////////////////////////////////////////////////////////
+
+        public static readonly (string bencodeString, BTT[] nodeTypes1, BTT[] nodeTypes2, BTT[] nodeTypes3)[] CreateSpan_DataAndTokens = new[]
+        {
+            ("le", new BTT[0], new BTT[] { BTT.ListHead }, new BTT[] { BTT.ListTail }),
+            ("le", new BTT[0], new BTT[] { BTT.ListHead, BTT.ListTail }, new BTT[0]),
+            ("le", new BTT[] { BTT.ListHead }, new BTT[0], new BTT[] { BTT.ListTail }),
+            ("le", new BTT[] { BTT.ListHead }, new BTT[] { BTT.ListTail }, new BTT[0]),
+            ("de", new BTT[0], new BTT[] { BTT.DictionaryHead }, new BTT[] { BTT.DictionaryTail }),
+            ("de", new BTT[0], new BTT[] { BTT.DictionaryHead, BTT.DictionaryTail }, new BTT[0]),
+            ("de", new BTT[] { BTT.DictionaryHead }, new BTT[0], new BTT[] { BTT.DictionaryTail }),
+            ("de", new BTT[] { BTT.DictionaryHead }, new BTT[] { BTT.DictionaryTail }, new BTT[0]),
+            ("d1:ai1ee", new BTT[0], new BTT[] { BTT.DictionaryHead, BTT.Key, BTT.Integer, BTT.DictionaryTail }, new BTT[0]),
+            ("d1:ai1ee", new BTT[0] { }, new BTT[] { BTT.DictionaryHead }, new BTT[] { BTT.Key, BTT.Integer, BTT.DictionaryTail }),
+            ("d1:ai1ee", new BTT[] { BTT.DictionaryHead }, new BTT[] { BTT.Key }, new BTT[] { BTT.Integer, BTT.DictionaryTail }),
+            ("d1:ai1ee", new BTT[] { BTT.DictionaryHead }, new BTT[] { BTT.Key, BTT.Integer }, new BTT[] { BTT.DictionaryTail }),
+            ("d1:ai1ee", new BTT[] { BTT.DictionaryHead, BTT.Key }, new BTT[] { BTT.Integer }, new BTT[] { BTT.DictionaryTail }),
+            ("d1:ai1ee", new BTT[] { BTT.DictionaryHead, BTT.Key, BTT.Integer }, new BTT[] { BTT.DictionaryTail }, new BTT[0]),
+        };
     }
 }

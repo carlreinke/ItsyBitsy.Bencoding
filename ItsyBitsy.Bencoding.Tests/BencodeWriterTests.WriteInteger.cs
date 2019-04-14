@@ -21,13 +21,14 @@ using BTT = ItsyBitsy.Bencoding.BencodeTokenType;
 
 namespace ItsyBitsy.Bencoding.Tests
 {
-    public abstract partial class BencodeWriterTestsBase
+    public partial class BencodeWriterTests
     {
         [Fact]
-        public void WriteInteger_InInitialState_GoesToFinalState()
+        public static void WriteInteger_InInitialState_GoesToFinalState()
         {
             byte[] bencode = $"i1e".ToUtf8();
-            var writer = Writer;
+            var buffer = new FixedLengthBufferWriter(bencode.Length);
+            var writer = new BencodeWriter(buffer);
 
             writer.WriteInteger(1);
             var ex = Assert.Throws<InvalidOperationException>(() => writer.WriteInteger(0));
@@ -37,13 +38,14 @@ namespace ItsyBitsy.Bencoding.Tests
 
         [Theory]
         [TupleMemberData(nameof(BencodeTestData.ReadList_ValidData_DataAndValue), MemberType = typeof(BencodeTestData))]
-        public void WriteInteger_InListValueState_GoesToListValueState(string bencodeString, BTT[] tokenTypes)
+        public static void WriteInteger_InListValueState_GoesToListValueState(string bencodeString, BTT[] tokenTypes)
         {
             byte[] bencode = bencodeString.ToUtf8();
             var reader = new BencodeReader(bencode);
             string listBodyBencodeString = bencodeString.Substring(1, bencodeString.Length - 2);
             byte[] listBencode = $"li1e{listBodyBencodeString}e".ToUtf8();
-            var writer = Writer;
+            var buffer = new FixedLengthBufferWriter(listBencode.Length);
+            var writer = new BencodeWriter(buffer);
             reader.ReadListHead();
             writer.WriteListHead();
 
@@ -52,20 +54,21 @@ namespace ItsyBitsy.Bencoding.Tests
 
             reader.ReadListTail();
             writer.WriteListTail();
+            writer.Flush();
 
-            byte[] buffer = EncodedData;
-            Assert.Equal(listBencode, buffer);
+            Assert.Equal(listBencode, buffer.WrittenSpan.ToArray());
         }
 
         [Theory]
         [TupleMemberData(nameof(BencodeTestData.ReadDictionary_ValidData_DataAndValue), MemberType = typeof(BencodeTestData))]
-        public void WriteInteger_InDictionaryValueState_GoesToDictionaryKeyState(string bencodeString, BTT[] tokenTypes)
+        public static void WriteInteger_InDictionaryValueState_GoesToDictionaryKeyState(string bencodeString, BTT[] tokenTypes)
         {
             byte[] bencode = bencodeString.ToUtf8();
             var reader = new BencodeReader(bencode);
             string dictionaryBodyBencodeString = bencodeString.Substring(1, bencodeString.Length - 2);
             byte[] dictionaryBencode = $"d1:!i1e{dictionaryBodyBencodeString}e".ToUtf8();
-            var writer = Writer;
+            var buffer = new FixedLengthBufferWriter(dictionaryBencode.Length);
+            var writer = new BencodeWriter(buffer);
             reader.ReadDictionaryHead();
             writer.WriteDictionaryHead();
             writer.WriteKey("!".ToUtf8());
@@ -75,20 +78,33 @@ namespace ItsyBitsy.Bencoding.Tests
 
             reader.ReadDictionaryTail();
             writer.WriteDictionaryTail();
+            writer.Flush();
 
-            byte[] buffer = EncodedData;
-            Assert.Equal(dictionaryBencode, buffer);
+            Assert.Equal(dictionaryBencode, buffer.WrittenSpan.ToArray());
         }
 
         [Theory]
         [TupleMemberData(nameof(BencodeTestData.InDictionaryKeyState_DataAndTokens), MemberType = typeof(BencodeTestData))]
         [TupleMemberData(nameof(BencodeTestData.InFinalState_DataAndTokens), MemberType = typeof(BencodeTestData))]
-        public void WriteInteger_InInvalidState_ThrowsInvalidOperationException(string bencodeString, BTT[] tokenTypes)
+        public static void WriteInteger_InInvalidState_ThrowsInvalidOperationException(string bencodeString, BTT[] tokenTypes)
         {
             byte[] bencode = bencodeString.ToUtf8();
             var reader = new BencodeReader(bencode);
-            var writer = Writer;
+            var buffer = new FixedLengthBufferWriter(bencode.Length);
+            var writer = new BencodeWriter(buffer);
             Copy(reader, writer, tokenTypes);
+
+            var ex = Assert.Throws<InvalidOperationException>(() => writer.WriteInteger(1));
+
+            Assert.Equal("The writer is not in a state that allows a value to be written.", ex.Message);
+        }
+
+        [Fact]
+        public static void WriteInteger_InErrorState_ThrowsInvalidOperationException()
+        {
+            var buffer = new FixedLengthBufferWriter(0);
+            var writer = new BencodeWriter(buffer);
+            _ = Assert.Throws<ArgumentException>(() => writer.WriteString(Array.Empty<byte>()));
 
             var ex = Assert.Throws<InvalidOperationException>(() => writer.WriteInteger(1));
 
@@ -99,48 +115,83 @@ namespace ItsyBitsy.Bencoding.Tests
 
         [Theory]
         [TupleMemberData(nameof(BencodeTestData.ReadInteger_ValidData_DataAndValue), MemberType = typeof(BencodeTestData))]
-        public void WriteInteger_InInitialState_WritesExpectedData(string bencodeString, long value)
+        public static void WriteInteger_InInitialState_WritesExpectedData(string bencodeString, long value)
         {
             byte[] bencode = bencodeString.ToUtf8();
-            var writer = Writer;
+            var buffer = new FixedLengthBufferWriter(bencode.Length);
+            var writer = new BencodeWriter(buffer);
 
             writer.WriteInteger(value);
+            writer.Flush();
 
-            byte[] buffer = EncodedData;
-            Assert.Equal(bencode, buffer);
+            Assert.Equal(bencode, buffer.WrittenSpan.ToArray());
         }
 
         [Theory]
         [TupleMemberData(nameof(BencodeTestData.ReadInteger_ValidData_DataAndValue), MemberType = typeof(BencodeTestData))]
-        public void WriteInteger_InListValueState_WritesExpectedData(string bencodeString, long value)
+        public static void WriteInteger_InListValueState_WritesExpectedData(string bencodeString, long value)
         {
             byte[] bencode = $"l{bencodeString}e".ToUtf8();
-            var writer = Writer;
+            var buffer = new FixedLengthBufferWriter(bencode.Length);
+            var writer = new BencodeWriter(buffer);
             writer.WriteListHead();
 
             writer.WriteInteger(value);
 
             writer.WriteListTail();
+            writer.Flush();
 
-            byte[] buffer = EncodedData;
-            Assert.Equal(bencode, buffer);
+            Assert.Equal(bencode, buffer.WrittenSpan.ToArray());
         }
 
         [Theory]
         [TupleMemberData(nameof(BencodeTestData.ReadInteger_ValidData_DataAndValue), MemberType = typeof(BencodeTestData))]
-        public void WriteInteger_InDictionaryValueState_WritesExpectedData(string bencodeString, long value)
+        public static void WriteInteger_InDictionaryValueState_WritesExpectedData(string bencodeString, long value)
         {
             byte[] bencode = $"d1:a{bencodeString}e".ToUtf8();
-            var writer = Writer;
+            var buffer = new FixedLengthBufferWriter(bencode.Length);
+            var writer = new BencodeWriter(buffer);
             writer.WriteDictionaryHead();
             writer.WriteKey("a".ToUtf8());
 
             writer.WriteInteger(value);
 
             writer.WriteDictionaryTail();
+            writer.Flush();
 
-            byte[] buffer = EncodedData;
-            Assert.Equal(bencode, buffer);
+            Assert.Equal(bencode, buffer.WrittenSpan.ToArray());
+        }
+
+        ////////////////////////////////////////////////////////////////////////////////////////////
+
+        [Theory]
+        [TupleMemberData(nameof(BencodeTestData.ReadInteger_ValidData_DataAndValue), MemberType = typeof(BencodeTestData))]
+        public static void WriteInteger_OversizedBuffer_WritesExpectedData(string bencodeString, long value)
+        {
+            byte[] bencode = bencodeString.ToUtf8();
+            var buffer = new FixedLengthBufferWriter(bencode.Length + 1);
+            var writer = new BencodeWriter(buffer);
+
+            writer.WriteInteger(value);
+            writer.Flush();
+
+            Assert.Equal(bencode, buffer.WrittenSpan.ToArray());
+        }
+
+        [Theory]
+        [TupleMemberData(nameof(BencodeTestData.ReadInteger_ValidData_DataAndValue), MemberType = typeof(BencodeTestData))]
+        public static void WriteInteger_UndersizedBuffer_ThrowsArgumentException(string bencodeString, long value)
+        {
+            byte[] bencode = bencodeString.ToUtf8();
+            for (int i = 1; i < bencode.Length; ++i)
+            {
+                var buffer = new FixedLengthBufferWriter(bencode.Length - i);
+                var writer = new BencodeWriter(buffer);
+
+                var ex = Assert.Throws<ArgumentException>(() => writer.WriteInteger(value));
+
+                Assert.Equal("Reached the end of the destination buffer while attempting to write.", ex.Message);
+            }
         }
     }
 }

@@ -24,7 +24,8 @@ namespace ItsyBitsy.Bencoding
     /// <summary>
     /// A reader that provides access to bencoded data.
     /// </summary>
-    public sealed class BencodeReader : IBencodeReader
+    /// <seealso cref="BencodeSpanReader"/>
+    public sealed class BencodeReader
     {
         private readonly ReadOnlyMemory<byte> _memory;
 
@@ -32,11 +33,11 @@ namespace ItsyBitsy.Bencoding
 
         private State _state;
 
+        private BitStack _scopeStack;
+
         private int _stringHeadLength;
 
         private int _stringLength;
-
-        private BitStack _scopeStack;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="BencodeReader"/> class using the specified
@@ -47,12 +48,6 @@ namespace ItsyBitsy.Bencoding
         {
             _memory = source;
         }
-
-        /// <summary>
-        /// Gets a indicator of whether the reader position can be set.
-        /// </summary>
-        /// <returns><see langword="true"/>.</returns>
-        public bool CanSeek => true;
 
         /// <summary>
         /// Gets or sets the position of the reader in the source memory.
@@ -76,22 +71,29 @@ namespace ItsyBitsy.Bencoding
 
                 _index = value;
                 _state = State.Initial;
+                _scopeStack.Clear();
                 _stringHeadLength = 0;
                 _stringLength = 0;
-                _scopeStack.Clear();
             }
         }
 
-        long IBencodeReader.Position
+        /// <summary>
+        /// Gets a <see cref="BencodeSpanReader"/> that continues from the current state of this
+        /// reader.
+        /// </summary>
+        /// <returns>A <see cref="BencodeSpanReader"/> that continues from the current state of this
+        ///     reader.</returns>
+        /// <remarks>
+        /// Do not operate on this reader again until after calling
+        /// <see cref="BencodeSpanReader.Dispose"/> on the <see cref="BencodeSpanReader"/>.
+        /// </remarks>
+        public BencodeSpanReader CreateSpanReader()
         {
-            get => Position;
-            set
-            {
-                if (value < 0 || value > int.MaxValue)
-                    throw new ArgumentOutOfRangeException(nameof(value));
+            var spanReader = new BencodeSpanReader(this, _memory.Span, _index, _state, _scopeStack);
 
-                Position = (int)value;
-            }
+            _state = State.Error;
+
+            return spanReader;
         }
 
         /// <summary>
@@ -201,7 +203,7 @@ namespace ItsyBitsy.Bencoding
         ///     that is not in the supported range.</exception>
         /// <exception cref="InvalidOperationException">The writer is not in a state that allows a
         ///     value to be written.</exception>
-        public void ReadValueTo(IBencodeWriter writer)
+        public void ReadValueTo(BencodeWriter writer)
         {
             if (writer == null)
                 throw new ArgumentNullException(nameof(writer));
@@ -287,37 +289,18 @@ namespace ItsyBitsy.Bencoding
         ///     length that is not in the supported range.</exception>
         public ReadOnlyMemory<byte> ReadString()
         {
-            return _memory.Slice(ReadStringSpan());
-        }
+            _state = GetStateAfterValue(_state);
 
-        /// <summary>
-        /// Attempts to read a string into a buffer.
-        /// </summary>
-        /// <param name="destination">The buffer that the string will be written into.</param>
-        /// <param name="bytesWritten">Returns the length of the string that was written into the
-        ///     buffer or 0 if the length of the string is greater than the length of the buffer.
-        ///     </param>
-        /// <returns><see langword="false"/> if the length of the string is greater than the length
-        ///     of the buffer; otherwise, <see langword="true"/>.</returns>
-        /// <exception cref="InvalidOperationException">The reader is not in a state that allows a
-        ///     string to be read.</exception>
-        /// <exception cref="InvalidBencodeException">The reader encountered invalid data while
-        ///     attempting to read a string.</exception>
-        /// <exception cref="UnsupportedBencodeException">The reader encountered a string with a
-        ///     length that is not in the supported range.</exception>
-        public bool TryReadString(Span<byte> destination, out int bytesWritten)
-        {
-            int length = ReadStringLength();
-            if (length > destination.Length)
+            try
             {
-                bytesWritten = 0;
-                return false;
+                var span = ReadStringInternal(_memory.Span, ref _index, ref _stringHeadLength, ref _stringLength);
+                return _memory.Slice(span);
             }
-
-            ReadOnlySpan<byte> value = ReadStringSpan();
-            value.CopyTo(destination);
-            bytesWritten = value.Length;
-            return true;
+            catch
+            {
+                _state = State.Error;
+                throw;
+            }
         }
 
         /// <summary>
@@ -397,7 +380,7 @@ namespace ItsyBitsy.Bencoding
         }
 
         /// <summary>
-        /// Reads a dictionary and returns a <see cref="BencodeDictionary{TPosition}"/>.
+        /// Reads a dictionary and returns a <see cref="BencodeDictionary"/>.
         /// </summary>
         /// <param name="skipDuplicateKeys">If <see langword="true"/>, duplicate keys are skipped
         ///     rather than causing <see cref="InvalidBencodeException"/> to be thrown.</param>
@@ -414,11 +397,11 @@ namespace ItsyBitsy.Bencoding
         ///     length that is not in the supported range.</exception>
         /// <exception cref="UnsupportedBencodeException">The reader encountered a key with a length
         ///     that is not in the supported range.</exception>
-        public BencodeDictionary<int> ReadDictionary(bool skipDuplicateKeys = false)
+        public BencodeDictionary ReadDictionary(bool skipDuplicateKeys = false)
         {
             ReadDictionaryHead();
 
-            var dictionary = new BencodeDictionary<int>();
+            var dictionary = new BencodeDictionary();
 
             int duplicateKeyPosition = -1;
 
@@ -512,47 +495,6 @@ namespace ItsyBitsy.Bencoding
         }
 
         /// <summary>
-        /// Reads a key and writes it to a bencode writer.
-        /// </summary>
-        /// <param name="writer">The bencode writer that the key read from the reader is written to.
-        ///     </param>
-        /// <exception cref="InvalidOperationException">The reader is not in a state that allows a
-        ///     key to be read.</exception>
-        /// <exception cref="InvalidBencodeException">The reader encountered invalid data while
-        ///     attempting to read a key.</exception>
-        /// <exception cref="UnsupportedBencodeException">The reader encountered a key with a length
-        ///     that is not in the supported range.</exception>
-        /// <exception cref="InvalidOperationException">The writer is not in a state that allows a
-        ///     key to be written.</exception>
-        public void ReadKeyTo(ref BencodeSpanWriter writer)
-        {
-            writer.WriteKey(ReadKeySpan());
-        }
-
-        /// <summary>
-        /// Reads a key and writes it to a bencode writer.
-        /// </summary>
-        /// <param name="writer">The bencode writer that the key read from the reader is written to.
-        ///     </param>
-        /// <exception cref="ArgumentNullException"><paramref name="writer"/> is
-        ///     <see langword="null"/>.</exception>
-        /// <exception cref="InvalidOperationException">The reader is not in a state that allows a
-        ///     key to be read.</exception>
-        /// <exception cref="InvalidBencodeException">The reader encountered invalid data while
-        ///     attempting to read a key.</exception>
-        /// <exception cref="UnsupportedBencodeException">The reader encountered a key with a length
-        ///     that is not in the supported range.</exception>
-        /// <exception cref="InvalidOperationException">The writer is not in a state that allows a
-        ///     key to be written.</exception>
-        public void ReadKeyTo(IBencodeWriter writer)
-        {
-            if (writer == null)
-                throw new ArgumentNullException(nameof(writer));
-
-            writer.WriteKey(ReadKeySpan());
-        }
-
-        /// <summary>
         /// Determines the length of the key to be read.
         /// </summary>
         /// <returns>The length of the key.</returns>
@@ -595,77 +537,27 @@ namespace ItsyBitsy.Bencoding
         ///     that is not in the supported range.</exception>
         public ReadOnlyMemory<byte> ReadKey()
         {
-            return _memory.Slice(ReadKeySpan());
-        }
-
-        /// <summary>
-        /// Attempts to read a key into a buffer.
-        /// </summary>
-        /// <param name="destination">The buffer that the key will be written into.</param>
-        /// <param name="bytesWritten">Returns the length of the key that was written into the
-        ///     buffer or 0 if the length of the key is greater than the length of the buffer.
-        ///     </param>
-        /// <returns><see langword="false"/> if the length of the key is greater than the length of
-        ///     the buffer; otherwise, <see langword="true"/>.</returns>
-        /// <exception cref="InvalidOperationException">The reader is not in a state that allows a
-        ///     key to be read.</exception>
-        /// <exception cref="InvalidBencodeException">The reader encountered invalid data while
-        ///     attempting to read a key.</exception>
-        /// <exception cref="UnsupportedBencodeException">The reader encountered a key with a length
-        ///     that is not in the supported range.</exception>
-        public bool TryReadKey(Span<byte> destination, out int bytesWritten)
-        {
-            int length = ReadKeyLength();
-            if (length > destination.Length)
-            {
-                bytesWritten = 0;
-                return false;
-            }
-
-            ReadOnlySpan<byte> key = ReadKeySpan();
-            key.CopyTo(destination);
-            bytesWritten = key.Length;
-            return true;
-        }
-
-        byte[] IBencodeReader.ReadString()
-        {
-            return ReadStringSpan().ToArray();
-        }
-
-        byte[] IBencodeReader.ReadKey()
-        {
-            return ReadKeySpan().ToArray();
-        }
-
-        private ReadOnlySpan<byte> ReadStringSpan()
-        {
-            _state = GetStateAfterValue(_state);
-
-            try
-            {
-                return ReadStringInternal(_memory.Span, ref _index, ref _stringHeadLength, ref _stringLength);
-            }
-            catch
-            {
-                _state = State.Error;
-                throw;
-            }
-        }
-
-        private ReadOnlySpan<byte> ReadKeySpan()
-        {
             _state = GetStateAfterKey(_state);
 
             try
             {
-                return ReadStringInternal(_memory.Span, ref _index, ref _stringHeadLength, ref _stringLength);
+                var span = ReadStringInternal(_memory.Span, ref _index, ref _stringHeadLength, ref _stringLength);
+                return _memory.Slice(span);
             }
             catch
             {
                 _state = State.Error;
                 throw;
             }
+        }
+
+        internal void RestoreState(int index, State state, BitStack scopeStack)
+        {
+            _index = index;
+            _state = state;
+            _scopeStack = scopeStack;
+            _stringHeadLength = 0;
+            _stringLength = 0;
         }
     }
 }

@@ -16,6 +16,7 @@
 // 02110-1301, USA.
 //
 using System;
+using System.Buffers;
 using System.Buffers.Text;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
@@ -31,39 +32,117 @@ namespace ItsyBitsy.Bencoding
 
         private const int _longMaxDigits = 19;
 
-        private readonly Span<byte> _span;
+        private readonly BencodeWriter _parent;
 
-        private readonly Stack<PreviousKeyRange> _previousKeyStack;
+        private readonly IBufferWriter<byte> _buffer;
 
-        private int _index;
+        private readonly Stack<PreviousKey> _previousKeyStack;
+
+        private Span<byte> _span;
+
+        private int _bufferedLength;
 
         private State _state;
 
         private BitStack _scopeStack;
 
-        private PreviousKeyRange _previousKey;
+        private PreviousKey _previousKey;
 
         /// <summary>
         /// Initializes a new <see cref="BencodeSpanWriter"/> instance using the specified
         /// destination buffer.
         /// </summary>
-        /// <param name="destination">The span to write the encoded data into.</param>
+        /// <param name="destination">The destination to write the encoded data into.</param>
         /// <param name="skipValidation">If <see langword="true"/>, keys are not checked for
         ///     mis-ordering and duplication as they are being written.</param>
         public BencodeSpanWriter(Span<byte> destination, bool skipValidation = false)
         {
+            _parent = null;
+            _buffer = null;
             _span = destination;
-            _index = 0;
+            _bufferedLength = 0;
             _state = State.Initial;
             _scopeStack = new BitStack();
-            _previousKey = PreviousKeyRange.None;
-            _previousKeyStack = skipValidation ? null : new Stack<PreviousKeyRange>();
+            _previousKey = PreviousKey.None;
+            _previousKeyStack = skipValidation ? null : new Stack<PreviousKey>();
         }
 
         /// <summary>
-        /// Gets the current length of the encoded data.
+        /// Initializes a new <see cref="BencodeSpanWriter"/> instance using the specified
+        /// destination buffer.
         /// </summary>
-        public int Length => _index;
+        /// <param name="destination">The destination to write the encoded data into.</param>
+        /// <param name="skipValidation">If <see langword="true"/>, keys are not checked for
+        ///     mis-ordering and duplication as they are being written.</param>
+        public BencodeSpanWriter(IBufferWriter<byte> destination, bool skipValidation = false)
+        {
+            _parent = null;
+            _buffer = destination;
+            _span = destination.GetSpan();
+            _bufferedLength = 0;
+            _state = State.Initial;
+            _scopeStack = new BitStack();
+            _previousKey = PreviousKey.None;
+            _previousKeyStack = skipValidation ? null : new Stack<PreviousKey>();
+        }
+
+        internal BencodeSpanWriter(BencodeWriter parent, IBufferWriter<byte> destination, State state, BitStack scopeStack, PreviousKey previousKey, Stack<PreviousKey> previousKeyStack)
+        {
+            _parent = parent;
+            _buffer = destination;
+            _span = destination.GetSpan();
+            _bufferedLength = 0;
+            _state = state;
+            _scopeStack = scopeStack;
+            _previousKey = previousKey;
+            _previousKeyStack = previousKeyStack;
+        }
+
+        /// <summary>
+        /// Gets the number of bytes that have been written but not yet flushed to the underlying
+        /// <see cref="IBufferWriter{T}"/>.
+        /// </summary>
+        /// <remarks>
+        /// If <see cref="BencodeSpanWriter"/> was constructed with a <see cref="Span{T}"/> as the
+        /// destination then <see cref="BufferedLength"/> is the number of bytes written to the
+        /// <see cref="Span{T}"/>.
+        /// </remarks>
+        public int BufferedLength => _bufferedLength;
+
+        /// <summary>
+        /// Advances the underlying <see cref="IBufferWriter{T}"/>.
+        /// </summary>
+        /// <param name="final">Indicates whether the value should be complete.</param>
+        /// <exception cref="InvalidOperationException"><paramref name="final"/> is
+        ///     <see langword="true"/> and the value is incomplete.</exception>
+        public void Flush(bool final = true)
+        {
+            if (final && _state != State.Final)
+                throw new InvalidOperationException("The value is incomplete.");
+
+            Flush();
+        }
+
+        /// <summary>
+        /// Restores the state of the parent writer.
+        /// </summary>
+        /// <remarks>
+        /// It is only necessary to call <see cref="Dispose"/> if the
+        /// <see cref="BencodeSpanWriter"/> was created using
+        /// <see cref="BencodeWriter.CreateSpanWriter"/>.
+        /// </remarks>
+        public void Dispose()
+        {
+            if (_state == State.Disposed)
+                return;
+
+            Flush();
+
+            if (_parent != null)
+                _parent.RestoreState(_state, _scopeStack, _previousKey);
+
+            _state = State.Disposed;
+        }
 
         /// <summary>
         /// Writes an integer.
@@ -83,8 +162,9 @@ namespace ItsyBitsy.Bencoding
                 if (!Utf8Formatter.TryFormat(value, numberBuffer, out int numberLength))
                     throw new InvalidOperationException("Unreachable!");
 
-                var span = CheckCapacity(1 + numberLength + 1);
+                EnsureCapacity(1 + numberLength + 1);
 
+                var span = _span;
                 span[0] = (byte)'i';
                 span = span.Slice(1);
                 numberBuffer.Slice(0, numberLength).CopyTo(span);
@@ -128,9 +208,9 @@ namespace ItsyBitsy.Bencoding
 
             try
             {
-                var span = CheckCapacity(1);
+                EnsureCapacity(1);
 
-                span[0] = (byte)'l';
+                _span[0] = (byte)'l';
 
                 Advance(1);
             }
@@ -154,9 +234,9 @@ namespace ItsyBitsy.Bencoding
 
             try
             {
-                var span = CheckCapacity(1);
+                EnsureCapacity(1);
 
-                span[0] = (byte)'e';
+                _span[0] = (byte)'e';
 
                 Advance(1);
             }
@@ -181,14 +261,14 @@ namespace ItsyBitsy.Bencoding
             if (_previousKeyStack != null)
             {
                 _previousKeyStack.Push(_previousKey);
-                _previousKey = PreviousKeyRange.None;
+                _previousKey = PreviousKey.None;
             }
 
             try
             {
-                var span = CheckCapacity(1);
+                EnsureCapacity(1);
 
-                span[0] = (byte)'d';
+                _span[0] = (byte)'d';
 
                 Advance(1);
             }
@@ -211,13 +291,15 @@ namespace ItsyBitsy.Bencoding
             _state = ExitDictionaryScope(_state, ref _scopeStack);
 
             if (_previousKeyStack != null)
+            {
                 _previousKey = _previousKeyStack.Pop();
+            }
 
             try
             {
-                var span = CheckCapacity(1);
+                EnsureCapacity(1);
 
-                span[0] = (byte)'e';
+                _span[0] = (byte)'e';
 
                 Advance(1);
             }
@@ -236,17 +318,19 @@ namespace ItsyBitsy.Bencoding
         ///     key to be written.</exception>
         /// <exception cref="ArgumentException">The writer reached the end of the destination buffer
         ///     while writing the key.</exception>
+        /// <exception cref="InvalidOperationException">The writer was constructed with validation
+        ///     enabled and the key being written is mis-ordered or duplicated.</exception>
         public void WriteKey(ReadOnlySpan<byte> key)
         {
             _state = GetStateAfterKey(_state);
 
-            if (_previousKey.HasValue && !IsLess(_previousKey.Slice(_span), key))
+            if (_previousKey.HasValue && !IsLess(_previousKey.Span, key))
                 throw new InvalidOperationException("Keys must be ordered and unique.");
 
-            WriteStringInternal(key);
-
             if (_previousKeyStack != null)
-                _previousKey = new PreviousKeyRange(_index - key.Length, key.Length);
+                _previousKey.CopyFrom(key);
+
+            WriteStringInternal(key);
         }
 
         internal static State GetStateAfterValue(State state)
@@ -351,18 +435,62 @@ namespace ItsyBitsy.Bencoding
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private Span<byte> CheckCapacity(int capacity)
+        private void EnsureCapacity(int pendingLength)
         {
-            var span = _span.Slice(_index);
-            if (span.Length < capacity)
-                throw new ArgumentException("Reached the end of the destination buffer while attempting to write.");
-            return span;
+            if (_span.Length < pendingLength)
+                FlushAndEnsureCapacity(pendingLength);
+        }
+
+        private void FlushAndEnsureCapacity(int pendingLength)
+        {
+            if (_buffer != null)
+            {
+                if (_bufferedLength > 0)
+                {
+                    _buffer.Advance(_bufferedLength);
+                    _bufferedLength = 0;
+                }
+                _span = _buffer.GetSpan(pendingLength);
+            }
+
+            if (_span.Length < pendingLength)
+                throw new ArgumentException($"Reached the end of the destination buffer while attempting to write.");
+        }
+
+        private void FlushAndRequestCapacity(int pendingLength)
+        {
+            if (_buffer != null)
+            {
+                if (_bufferedLength > 0)
+                {
+                    _buffer.Advance(_bufferedLength);
+                    _bufferedLength = 0;
+                }
+                _span = _buffer.GetSpan(pendingLength);
+            }
+
+            if (_span.Length == 0)
+                throw new ArgumentException($"Reached the end of the destination buffer while attempting to write.");
+        }
+
+        private void Flush()
+        {
+            if (_buffer != null)
+            {
+                if (_bufferedLength > 0)
+                {
+                    _buffer.Advance(_bufferedLength);
+                    _bufferedLength = 0;
+                }
+                _span = Span<byte>.Empty;
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void Advance(int length)
         {
-            _index += length;
+            _span = _span.Slice(length);
+            _bufferedLength += length;
         }
 
         private void WriteStringInternal(ReadOnlySpan<byte> value)
@@ -373,20 +501,44 @@ namespace ItsyBitsy.Bencoding
                 if (!Utf8Formatter.TryFormat(value.Length, numberBuffer, out int numberLength))
                     throw new InvalidOperationException("Unreachable!");
 
-                var span = CheckCapacity(numberLength + 1 + value.Length);
+                EnsureCapacity(numberLength + 1);
 
+                var span = _span;
                 numberBuffer.Slice(0, numberLength).CopyTo(span);
                 span = span.Slice(numberLength);
                 span[0] = (byte)':';
-                span = span.Slice(1);
-                value.CopyTo(span);
 
-                Advance(numberLength + 1 + value.Length);
+                Advance(numberLength + 1);
+
+                WriteIncrementally(value);
             }
             catch
             {
                 _state = State.Error;
                 throw;
+            }
+        }
+
+        private void WriteIncrementally(ReadOnlySpan<byte> value)
+        {
+            for (; ; )
+            {
+                Span<byte> span = _span;
+                int length = span.Length;
+
+                if (length >= value.Length)
+                {
+                    value.CopyTo(span);
+                    Advance(value.Length);
+                    return;
+                }
+
+                value.Slice(0, length).CopyTo(span);
+                Advance(length);
+
+                value = value.Slice(length);
+
+                FlushAndRequestCapacity(0);
             }
         }
 
@@ -398,25 +550,29 @@ namespace ItsyBitsy.Bencoding
             ListItem,
             Final,
             Error,
+            Disposed,
         }
 
-        private struct PreviousKeyRange
+        internal struct PreviousKey
         {
-            public static readonly PreviousKeyRange None = new PreviousKeyRange(-1, 0);
+            public static readonly PreviousKey None = default;
 
-            private readonly int _index;
+            private byte[] _array;
 
-            private readonly int _length;
+            private int _length;
 
-            public bool HasValue => _index >= 0;
+            public bool HasValue => _array != null;
 
-            public PreviousKeyRange(int index, int length)
+            public ReadOnlySpan<byte> Span => _array.AsSpan(0, _length);
+
+            public void CopyFrom(ReadOnlySpan<byte> key)
             {
-                _index = index;
-                _length = length;
-            }
+                if (_array == null || key.Length > _array.Length)
+                    _array = new byte[key.Length];
 
-            public ReadOnlySpan<byte> Slice(ReadOnlySpan<byte> span) => span.Slice(_index, _length);
+                key.CopyTo(_array);
+                _length = key.Length;
+            }
         }
     }
 }

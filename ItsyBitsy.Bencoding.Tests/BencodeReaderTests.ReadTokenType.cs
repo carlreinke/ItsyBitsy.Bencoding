@@ -21,7 +21,7 @@ using BTT = ItsyBitsy.Bencoding.BencodeTokenType;
 
 namespace ItsyBitsy.Bencoding.Tests
 {
-    public abstract partial class BencodeReaderTestsBase
+    public partial class BencodeReaderTests
     {
         [Theory]
         [TupleMemberData(nameof(BencodeTestData.ReadTokenType_InInitialState_DataAndTokensAndToken), MemberType = typeof(BencodeTestData))]
@@ -29,10 +29,10 @@ namespace ItsyBitsy.Bencoding.Tests
         [TupleMemberData(nameof(BencodeTestData.ReadTokenType_InDictionaryValueState_DataAndTokensAndToken), MemberType = typeof(BencodeTestData))]
         [TupleMemberData(nameof(BencodeTestData.ReadTokenType_InDictionaryKeyState_DataAndTokensAndToken), MemberType = typeof(BencodeTestData))]
         [TupleMemberData(nameof(BencodeTestData.ReadTokenType_InAnyTerminalState_DataAndTokensAndToken), MemberType = typeof(BencodeTestData))]
-        public void ReadTokenType_InAnyTerminalState_ReturnsExpectedResult(string bencodeString, BTT[] tokenTypes, BTT expectedTokenType)
+        public static void ReadTokenType_InAnyTerminalState_ReturnsExpectedResult(string bencodeString, BTT[] tokenTypes, BTT expectedTokenType)
         {
             byte[] bencode = bencodeString.ToUtf8();
-            var reader = CreateReader(bencode);
+            var reader = new BencodeReader(bencode);
             Expect(reader, tokenTypes);
 
             var tokenType = reader.ReadTokenType();
@@ -48,12 +48,12 @@ namespace ItsyBitsy.Bencoding.Tests
         [TupleMemberData(nameof(BencodeTestData.ReadTokenType_InDictionaryValueState_DataAndTokensAndPosition), MemberType = typeof(BencodeTestData))]
         [TupleMemberData(nameof(BencodeTestData.ReadTokenType_InDictionaryKeyState_DataAndTokensAndPosition), MemberType = typeof(BencodeTestData))]
         [TupleMemberData(nameof(BencodeTestData.ReadTokenType_InAnyTerminalState_DataAndTokensAndPosition), MemberType = typeof(BencodeTestData))]
-        public void ReadTokenType_InAnyTerminalState_PositionIsUnchanged(string bencodeString, BTT[] tokenTypes, int expectedPosition)
+        public static void ReadTokenType_InAnyTerminalState_PositionIsUnchanged(string bencodeString, BTT[] tokenTypes, int expectedPosition)
         {
             byte[] bencode = bencodeString.ToUtf8();
-            var reader = CreateReader(bencode);
+            var reader = new BencodeReader(bencode);
             Expect(reader, tokenTypes);
-            long position = reader.Position;
+            int position = reader.Position;
 
             _ = reader.ReadTokenType();
 
@@ -72,14 +72,14 @@ namespace ItsyBitsy.Bencoding.Tests
         [TupleMemberData(nameof(BencodeTestData.ReadTokenType_InDictionaryValueStateButInvalidData_DataAndTokensAndError), MemberType = typeof(BencodeTestData))]
         [TupleMemberData(nameof(BencodeTestData.ReadTokenType_InDictionaryKeyStateButMissingData_DataAndTokensAndError), MemberType = typeof(BencodeTestData))]
         [TupleMemberData(nameof(BencodeTestData.ReadTokenType_InDictionaryKeyStateWithInvalidData_DataAndTokensAndError), MemberType = typeof(BencodeTestData))]
-        public void ReadTokenType_InDictionaryKeyStateButNotFound_ThrowsInvalidBencodeException(string bencodeString, BTT[] tokenTypes, string errorMessage, int errorPosition)
+        public static void ReadTokenType_InDictionaryKeyStateButNotFound_ThrowsInvalidBencodeException(string bencodeString, BTT[] tokenTypes, string errorMessage, int errorPosition)
         {
             byte[] bencode = bencodeString.ToUtf8();
-            var reader = CreateReader(bencode);
+            var reader = new BencodeReader(bencode);
             Expect(reader, tokenTypes);
 
             var ex = Assert.Throws<InvalidBencodeException>(() => _ = reader.ReadTokenType());
-            long position = reader.Position;
+            int position = reader.Position;
 
             Assert.Equal(errorMessage, ex.Message);
             Assert.Equal(errorPosition, ex.Position);

@@ -21,30 +21,38 @@ using BTT = ItsyBitsy.Bencoding.BencodeTokenType;
 
 namespace ItsyBitsy.Bencoding.Tests
 {
-    public abstract partial class BencodeReaderTestsBase
+    public partial class BencodeReaderTests
     {
         [Theory]
         [TupleMemberData(nameof(BencodeTestData.InDictionaryKeyState_DataAndTokens), MemberType = typeof(BencodeTestData))]
         [TupleMemberData(nameof(BencodeTestData.InFinalState_DataAndTokens), MemberType = typeof(BencodeTestData))]
-        public void SkipValue_InInvalidState_ThrowsInvalidOperationException(string bencodeString, BTT[] tokenTypes)
+        public static void ReadValueToBencodeSpanWriter_InInvalidState_ThrowsInvalidOperationException(string bencodeString, BTT[] tokenTypes)
         {
             byte[] bencode = bencodeString.ToUtf8();
-            var reader = CreateReader(bencode);
+            var reader = new BencodeReader(bencode);
             Expect(reader, tokenTypes);
 
-            var ex = Assert.Throws<InvalidOperationException>(() => reader.SkipValue());
+            var ex = Assert.Throws<InvalidOperationException>(() =>
+            {
+                var writer = new BencodeSpanWriter();
+                reader.ReadValueTo(ref writer);
+            });
 
             Assert.Equal("The reader is not in a state that allows a value to be read.", ex.Message);
         }
 
         [Fact]
-        public void SkipValue_InErrorState_ThrowsInvalidOperationException()
+        public static void ReadValueToBencodeSpanWriter_InErrorState_ThrowsInvalidOperationException()
         {
             byte[] bencode = "i1e".ToUtf8();
-            var reader = CreateReader(bencode);
+            var reader = new BencodeReader(bencode);
             _ = Assert.Throws<InvalidBencodeException>(() => _ = reader.ReadString());
 
-            var ex = Assert.Throws<InvalidOperationException>(() => reader.SkipValue());
+            var ex = Assert.Throws<InvalidOperationException>(() =>
+            {
+                var writer = new BencodeSpanWriter();
+                reader.ReadValueTo(ref writer);
+            });
 
             Assert.Equal("The reader is not in a state that allows a value to be read.", ex.Message);
         }
@@ -56,15 +64,16 @@ namespace ItsyBitsy.Bencoding.Tests
         [TupleMemberData(nameof(BencodeTestData.ReadString_ValidData_Data), MemberType = typeof(BencodeTestData))]
         [TupleMemberData(nameof(BencodeTestData.ReadList_ValidData_Data), MemberType = typeof(BencodeTestData))]
         [TupleMemberData(nameof(BencodeTestData.ReadDictionary_ValidData_Data), MemberType = typeof(BencodeTestData))]
-        public void SkipValue_ValidData_GoesToFinalState(string bencodeString)
+        public static void ReadValueToBencodeSpanWriter_InInitialState_WritesExpectedData(string bencodeString)
         {
             byte[] bencode = bencodeString.ToUtf8();
-            var reader = CreateReader(bencode);
+            var reader = new BencodeReader(bencode);
+            byte[] buffer = new byte[bencode.Length];
+            var writer = new BencodeSpanWriter(buffer);
 
-            reader.SkipValue();
-            var tokenType = reader.ReadTokenType();
+            reader.ReadValueTo(ref writer);
 
-            Assert.Equal(BTT.None, tokenType);
+            Assert.Equal(bencode, buffer.AsSpan(0, writer.BufferedLength).ToArray());
         }
 
         [Theory]
@@ -72,16 +81,18 @@ namespace ItsyBitsy.Bencoding.Tests
         [TupleMemberData(nameof(BencodeTestData.ReadString_ValidData_Data), MemberType = typeof(BencodeTestData))]
         [TupleMemberData(nameof(BencodeTestData.ReadList_ValidData_Data), MemberType = typeof(BencodeTestData))]
         [TupleMemberData(nameof(BencodeTestData.ReadDictionary_ValidData_Data), MemberType = typeof(BencodeTestData))]
-        public void SkipValue_ValidDataInList_GoesToValueState(string bencodeString)
+        public static void ReadValueToBencodeSpanWriter_InListValueState_WritesExpectedData(string bencodeString)
         {
-            byte[] bencode = $"l{bencodeString}e".ToUtf8();
-            var reader = CreateReader(bencode);
+            byte[] bencode = bencodeString.ToUtf8();
+            byte[] listBencode = $"l{bencodeString}e".ToUtf8();
+            var reader = new BencodeReader(listBencode);
+            byte[] buffer = new byte[bencode.Length];
+            var writer = new BencodeSpanWriter(buffer);
             reader.ReadListHead();
 
-            reader.SkipValue();
-            var tokenType = reader.ReadTokenType();
+            reader.ReadValueTo(ref writer);
 
-            Assert.Equal(BTT.ListTail, tokenType);
+            Assert.Equal(bencode, buffer.AsSpan(0, writer.BufferedLength).ToArray());
         }
 
         [Theory]
@@ -89,17 +100,19 @@ namespace ItsyBitsy.Bencoding.Tests
         [TupleMemberData(nameof(BencodeTestData.ReadString_ValidData_Data), MemberType = typeof(BencodeTestData))]
         [TupleMemberData(nameof(BencodeTestData.ReadList_ValidData_Data), MemberType = typeof(BencodeTestData))]
         [TupleMemberData(nameof(BencodeTestData.ReadDictionary_ValidData_Data), MemberType = typeof(BencodeTestData))]
-        public void SkipValue_ValidDataInDictionary_GoesToKeyState(string bencodeString)
+        public static void ReadValueToBencodeSpanWriter_InDictionaryValueState_WritesExpectedData(string bencodeString)
         {
-            byte[] bencode = $"d0:{bencodeString}e".ToUtf8();
-            var reader = CreateReader(bencode);
+            byte[] bencode = bencodeString.ToUtf8();
+            byte[] listBencode = $"d1:a{bencodeString}e".ToUtf8();
+            var reader = new BencodeReader(listBencode);
+            byte[] buffer = new byte[bencode.Length];
+            var writer = new BencodeSpanWriter(buffer);
             reader.ReadDictionaryHead();
             reader.SkipKey();
 
-            reader.SkipValue();
-            var tokenType = reader.ReadTokenType();
+            reader.ReadValueTo(ref writer);
 
-            Assert.Equal(BTT.DictionaryTail, tokenType);
+            Assert.Equal(bencode, buffer.AsSpan(0, writer.BufferedLength).ToArray());
         }
 
         ////////////////////////////////////////////////////////////////////////////////////////////
@@ -109,12 +122,14 @@ namespace ItsyBitsy.Bencoding.Tests
         [TupleMemberData(nameof(BencodeTestData.ReadString_ValidData_Data), MemberType = typeof(BencodeTestData))]
         [TupleMemberData(nameof(BencodeTestData.ReadList_ValidData_Data), MemberType = typeof(BencodeTestData))]
         [TupleMemberData(nameof(BencodeTestData.ReadDictionary_ValidData_Data), MemberType = typeof(BencodeTestData))]
-        public void SkipValue_ValidData_PositionIsAfterValue(string bencodeString)
+        public static void ReadValueToBencodeSpanWriter_ValidData_PositionIsAfterValue(string bencodeString)
         {
             byte[] bencode = bencodeString.ToUtf8();
-            var reader = CreateReader(bencode);
+            var reader = new BencodeReader(bencode);
+            byte[] buffer = new byte[bencode.Length];
+            var writer = new BencodeSpanWriter(buffer);
 
-            reader.SkipValue();
+            reader.ReadValueTo(ref writer);
 
             Assert.Equal(bencodeString.Length, reader.Position);
         }
@@ -124,13 +139,16 @@ namespace ItsyBitsy.Bencoding.Tests
         [TupleMemberData(nameof(BencodeTestData.ReadString_ValidData_Data), MemberType = typeof(BencodeTestData))]
         [TupleMemberData(nameof(BencodeTestData.ReadList_ValidData_Data), MemberType = typeof(BencodeTestData))]
         [TupleMemberData(nameof(BencodeTestData.ReadDictionary_ValidData_Data), MemberType = typeof(BencodeTestData))]
-        public void SkipValue_ValidDataInList_PositionIsAfterValue(string bencodeString)
+        public static void ReadValueToBencodeSpanWriter_ValidDataInList_PositionIsAfterValue(string bencodeString)
         {
             byte[] bencode = $"l{bencodeString}e".ToUtf8();
-            var reader = CreateReader(bencode);
+            var reader = new BencodeReader(bencode);
+            byte[] buffer = new byte[bencode.Length];
+            var writer = new BencodeSpanWriter(buffer);
             reader.ReadListHead();
+            writer.WriteListHead();
 
-            reader.SkipValue();
+            reader.ReadValueTo(ref writer);
 
             Assert.Equal(1 + bencodeString.Length, reader.Position);
         }
@@ -140,14 +158,17 @@ namespace ItsyBitsy.Bencoding.Tests
         [TupleMemberData(nameof(BencodeTestData.ReadString_ValidData_Data), MemberType = typeof(BencodeTestData))]
         [TupleMemberData(nameof(BencodeTestData.ReadList_ValidData_Data), MemberType = typeof(BencodeTestData))]
         [TupleMemberData(nameof(BencodeTestData.ReadDictionary_ValidData_Data), MemberType = typeof(BencodeTestData))]
-        public void SkipValue_ValidDataInDictionary_PositionIsAfterValue(string bencodeString)
+        public static void ReadValueToBencodeSpanWriter_ValidDataInDictionary_PositionIsAfterValue(string bencodeString)
         {
             byte[] bencode = $"d0:{bencodeString}e".ToUtf8();
-            var reader = CreateReader(bencode);
+            var reader = new BencodeReader(bencode);
+            byte[] buffer = new byte[bencode.Length];
+            var writer = new BencodeSpanWriter(buffer);
             reader.ReadDictionaryHead();
-            reader.SkipKey();
+            writer.WriteDictionaryHead();
+            writer.WriteKey(reader.ReadKey().Span);
 
-            reader.SkipValue();
+            reader.ReadValueTo(ref writer);
 
             Assert.Equal(3 + bencodeString.Length, reader.Position);
         }
@@ -165,13 +186,18 @@ namespace ItsyBitsy.Bencoding.Tests
         [TupleMemberData(nameof(BencodeTestData.ReadTokenType_InListValueStateButInvalidData_DataAndError), MemberType = typeof(BencodeTestData))]
         [TupleMemberData(nameof(BencodeTestData.ReadTokenType_InDictionaryValueStateButInvalidData_DataAndError), MemberType = typeof(BencodeTestData))]
         [TupleMemberData(nameof(BencodeTestData.ReadTokenType_InDictionaryKeyStateButInvalidData_DataAndError), MemberType = typeof(BencodeTestData))]
-        public void SkipValue_InvalidData_ThrowsInvalidBencodeExceptionAndGoesToErrorState(string bencodeString, string errorMessage, int errorPosition)
+        public static void ReadValueToBencodeSpanWriter_InvalidData_ThrowsInvalidBencodeExceptionAndGoesToErrorState(string bencodeString, string errorMessage, int errorPosition)
         {
             byte[] bencode = bencodeString.ToUtf8();
-            var reader = CreateReader(bencode);
+            var reader = new BencodeReader(bencode);
+            byte[] buffer = new byte[bencode.Length];
+            var writer = new BencodeSpanWriter(buffer);
 
-            var ex = Assert.Throws<InvalidBencodeException>(() => reader.SkipValue());
-            long position = reader.Position;
+            var ex = AssertThrows<InvalidBencodeException>(ref writer, (ref BencodeSpanWriter w) =>
+            {
+                reader.ReadValueTo(ref w);
+            });
+            int position = reader.Position;
             var errorTokenType = reader.ReadTokenType();
 
             Assert.Equal(errorMessage, ex.Message);
@@ -186,14 +212,19 @@ namespace ItsyBitsy.Bencoding.Tests
         [TupleMemberData(nameof(BencodeTestData.ReadTokenType_InListValueStateButMissingData_DataAndError), MemberType = typeof(BencodeTestData))]
         [TupleMemberData(nameof(BencodeTestData.ReadTokenType_InDictionaryValueStateButMissingData_DataAndError), MemberType = typeof(BencodeTestData))]
         [TupleMemberData(nameof(BencodeTestData.ReadTokenType_InDictionaryKeyStateButMissingData_DataAndError), MemberType = typeof(BencodeTestData))]
-        public void SkipValue_MissingDataInList_ThrowsInvalidBencodeExceptionAndGoesToErrorState(string bencodeString, string errorMessage, int errorPosition)
+        public static void ReadValueToBencodeSpanWriter_MissingDataInList_ThrowsInvalidBencodeExceptionAndGoesToErrorState(string bencodeString, string errorMessage, int errorPosition)
         {
             byte[] bencode = $"l{bencodeString}".ToUtf8();
-            var reader = CreateReader(bencode);
+            var reader = new BencodeReader(bencode);
+            byte[] buffer = new byte[bencode.Length];
+            var writer = new BencodeSpanWriter(buffer);
             reader.ReadListHead();
 
-            var ex = Assert.Throws<InvalidBencodeException>(() => reader.SkipValue());
-            long position = reader.Position;
+            var ex = AssertThrows<InvalidBencodeException>(ref writer, (ref BencodeSpanWriter w) =>
+            {
+                reader.ReadValueTo(ref w);
+            });
+            int position = reader.Position;
             var errorTokenType = reader.ReadTokenType();
 
             Assert.Equal(errorMessage, ex.Message);
@@ -208,14 +239,19 @@ namespace ItsyBitsy.Bencoding.Tests
         [TupleMemberData(nameof(BencodeTestData.ReadTokenType_InListValueStateButInvalidData_DataAndError), MemberType = typeof(BencodeTestData))]
         [TupleMemberData(nameof(BencodeTestData.ReadTokenType_InDictionaryValueStateButInvalidData_DataAndError), MemberType = typeof(BencodeTestData))]
         [TupleMemberData(nameof(BencodeTestData.ReadTokenType_InDictionaryKeyStateButInvalidData_DataAndError), MemberType = typeof(BencodeTestData))]
-        public void SkipValue_InvalidDataInList_ThrowsInvalidBencodeExceptionAndGoesToErrorState(string bencodeString, string errorMessage, int errorPosition)
+        public static void ReadValueToBencodeSpanWriter_InvalidDataInList_ThrowsInvalidBencodeExceptionAndGoesToErrorState(string bencodeString, string errorMessage, int errorPosition)
         {
             byte[] bencode = $"l{bencodeString}e".ToUtf8();
-            var reader = CreateReader(bencode);
+            var reader = new BencodeReader(bencode);
+            byte[] buffer = new byte[bencode.Length];
+            var writer = new BencodeSpanWriter(buffer);
             reader.ReadListHead();
 
-            var ex = Assert.Throws<InvalidBencodeException>(() => reader.SkipValue());
-            long position = reader.Position;
+            var ex = AssertThrows<InvalidBencodeException>(ref writer, (ref BencodeSpanWriter w) =>
+            {
+                reader.ReadValueTo(ref w);
+            });
+            int position = reader.Position;
             var errorTokenType = reader.ReadTokenType();
 
             Assert.Equal(errorMessage, ex.Message);
@@ -228,13 +264,17 @@ namespace ItsyBitsy.Bencoding.Tests
 
         [Theory]
         [TupleMemberData(nameof(BencodeTestData.SkipValue_UnsupportedData_DataAndError), MemberType = typeof(BencodeTestData))]
-        public void SkipValue_UnsupportedData_ThrowsUnsupportedBencodeExceptionAndGoesToErrorState(string bencodeString, string errorMessage, int errorPosition, int expectedPosition)
+        public static void ReadValueToBencodeSpanWriter_UnsupportedData_ThrowsUnsupportedBencodeExceptionAndGoesToErrorState(string bencodeString, string errorMessage, int errorPosition, int expectedPosition)
         {
             byte[] bencode = bencodeString.ToUtf8();
-            var reader = CreateReader(bencode);
+            var reader = new BencodeReader(bencode);
 
-            var ex = Assert.Throws<UnsupportedBencodeException>(() => reader.SkipValue());
-            long position = reader.Position;
+            var ex = Assert.Throws<UnsupportedBencodeException>(() =>
+            {
+                var writer = new BencodeSpanWriter();
+                reader.ReadValueTo(ref writer);
+            });
+            int position = reader.Position;
             var errorTokenType = reader.ReadTokenType();
 
             Assert.Equal(errorMessage, ex.Message);
@@ -245,14 +285,18 @@ namespace ItsyBitsy.Bencoding.Tests
 
         [Theory]
         [TupleMemberData(nameof(BencodeTestData.SkipValue_UnsupportedData_DataAndError), MemberType = typeof(BencodeTestData))]
-        public void SkipValue_UnsupportedDataInList_ThrowsUnsupportedBencodeExceptionAndGoesToErrorState(string bencodeString, string errorMessage, int errorPosition, int expectedPosition)
+        public static void ReadValueToBencodeSpanWriter_UnsupportedDataInList_ThrowsUnsupportedBencodeExceptionAndGoesToErrorState(string bencodeString, string errorMessage, int errorPosition, int expectedPosition)
         {
             byte[] bencode = $"l{bencodeString}e".ToUtf8();
-            var reader = CreateReader(bencode);
+            var reader = new BencodeReader(bencode);
             reader.ReadListHead();
 
-            var ex = Assert.Throws<UnsupportedBencodeException>(() => reader.SkipValue());
-            long position = reader.Position;
+            var ex = Assert.Throws<UnsupportedBencodeException>(() =>
+            {
+                var writer = new BencodeSpanWriter();
+                reader.ReadValueTo(ref writer);
+            });
+            int position = reader.Position;
             var errorTokenType = reader.ReadTokenType();
 
             Assert.Equal(errorMessage, ex.Message);

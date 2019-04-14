@@ -57,7 +57,7 @@ namespace ItsyBitsy.Bencoding.Tests
             reader.ReadListTail();
             writer.WriteListTail();
 
-            Assert.Equal(listBencode, buffer.AsSpan(0, writer.Length).ToArray());
+            Assert.Equal(listBencode, buffer.AsSpan(0, writer.BufferedLength).ToArray());
         }
 
         [Theory]
@@ -81,7 +81,7 @@ namespace ItsyBitsy.Bencoding.Tests
             reader.ReadDictionaryTail();
             writer.WriteDictionaryTail();
 
-            Assert.Equal(dictionaryBencode, buffer.AsSpan(0, writer.Length).ToArray());
+            Assert.Equal(dictionaryBencode, buffer.AsSpan(0, writer.BufferedLength).ToArray());
         }
 
         [Theory]
@@ -103,7 +103,8 @@ namespace ItsyBitsy.Bencoding.Tests
         [Fact]
         public static void WriteDictionaryHead_InErrorState_ThrowsInvalidOperationException()
         {
-            var writer = new BencodeSpanWriter(Array.Empty<byte>());
+            byte[] buffer = Array.Empty<byte>();
+            var writer = new BencodeSpanWriter(buffer);
             _ = AssertThrows<ArgumentException>(ref writer, (ref BencodeSpanWriter w) => w.WriteInteger(1));
 
             var ex = AssertThrows<InvalidOperationException>(ref writer, (ref BencodeSpanWriter w) => w.WriteDictionaryHead());
@@ -132,7 +133,8 @@ namespace ItsyBitsy.Bencoding.Tests
         [Fact]
         public static void WriteDictionaryTail_InErrorState_ThrowsInvalidOperationException()
         {
-            var writer = new BencodeSpanWriter(new byte[1]);
+            byte[] buffer = new byte[1];
+            var writer = new BencodeSpanWriter(buffer);
             writer.WriteDictionaryHead();
             _ = AssertThrows<ArgumentException>(ref writer, (ref BencodeSpanWriter w) => w.WriteKey("a".ToUtf8()));
 
@@ -160,7 +162,7 @@ namespace ItsyBitsy.Bencoding.Tests
             reader.ReadDictionaryTail();
             writer.WriteDictionaryTail();
 
-            Assert.Equal(bencode, buffer.AsSpan(0, writer.Length).ToArray());
+            Assert.Equal(bencode, buffer.AsSpan(0, writer.BufferedLength).ToArray());
         }
 
         [Theory]
@@ -184,7 +186,7 @@ namespace ItsyBitsy.Bencoding.Tests
 
             writer.WriteListTail();
 
-            Assert.Equal(listBencode, buffer.AsSpan(0, writer.Length).ToArray());
+            Assert.Equal(listBencode, buffer.AsSpan(0, writer.BufferedLength).ToArray());
         }
 
         [Theory]
@@ -209,7 +211,7 @@ namespace ItsyBitsy.Bencoding.Tests
 
             writer.WriteDictionaryTail();
 
-            Assert.Equal(dictionaryBencode, buffer.AsSpan(0, writer.Length).ToArray());
+            Assert.Equal(dictionaryBencode, buffer.AsSpan(0, writer.BufferedLength).ToArray());
         }
 
         ////////////////////////////////////////////////////////////////////////////////////////////
@@ -219,11 +221,11 @@ namespace ItsyBitsy.Bencoding.Tests
         {
             byte[] buffer = new byte[1];
             var writer = new BencodeSpanWriter(buffer);
-            int length = writer.Length;
+            int length = writer.BufferedLength;
 
             writer.WriteDictionaryHead();
 
-            Assert.Equal(length + 1, writer.Length);
+            Assert.Equal(length + 1, writer.BufferedLength);
         }
 
         [Fact]
@@ -231,11 +233,11 @@ namespace ItsyBitsy.Bencoding.Tests
         {
             byte[] buffer = new byte[2];
             var writer = new BencodeSpanWriter(buffer);
-            int length = writer.Length;
+            int length = writer.BufferedLength;
 
             writer.WriteDictionaryHead();
 
-            Assert.Equal(length + 1, writer.Length);
+            Assert.Equal(length + 1, writer.BufferedLength);
         }
 
         [Fact]
@@ -255,11 +257,11 @@ namespace ItsyBitsy.Bencoding.Tests
             byte[] buffer = new byte[2];
             var writer = new BencodeSpanWriter(buffer);
             writer.WriteDictionaryHead();
-            int length = writer.Length;
+            int length = writer.BufferedLength;
 
             writer.WriteDictionaryTail();
 
-            Assert.Equal(length + 1, writer.Length);
+            Assert.Equal(length + 1, writer.BufferedLength);
         }
 
         [Fact]
@@ -268,11 +270,11 @@ namespace ItsyBitsy.Bencoding.Tests
             byte[] buffer = new byte[3];
             var writer = new BencodeSpanWriter(buffer);
             writer.WriteDictionaryHead();
-            int length = writer.Length;
+            int length = writer.BufferedLength;
 
             writer.WriteDictionaryTail();
 
-            Assert.Equal(length + 1, writer.Length);
+            Assert.Equal(length + 1, writer.BufferedLength);
         }
 
         [Fact]
@@ -289,16 +291,8 @@ namespace ItsyBitsy.Bencoding.Tests
 
         ////////////////////////////////////////////////////////////////////////////////////////////
 
-        public static readonly (string bencodeString, BTT[] tokenTypes)[] KeyOrderValid_DataAndTokens = new[]
-        {
-            ("d1:ai1e2:aai2ee", new BTT[] { BTT.DictionaryHead, BTT.Key, BTT.Integer, BTT.Key, BTT.Integer, BTT.DictionaryTail }),
-            ("d1:ai1e1:bi2ee", new BTT[] { BTT.DictionaryHead, BTT.Key, BTT.Integer, BTT.Key, BTT.Integer, BTT.DictionaryTail }),
-            ("d1:bd1:ai1eee", new BTT[] { BTT.DictionaryHead, BTT.Key, BTT.DictionaryHead, BTT.Key, BTT.Integer, BTT.DictionaryTail, BTT.DictionaryTail }),
-            ("d1:ad1:ci1ee1:bi2ee", new BTT[] { BTT.DictionaryHead, BTT.Key, BTT.DictionaryHead, BTT.Key, BTT.Integer, BTT.DictionaryTail, BTT.Key, BTT.Integer, BTT.DictionaryTail }),
-        };
-
         [Theory]
-        [TupleMemberData(nameof(KeyOrderValid_DataAndTokens))]
+        [TupleMemberData(nameof(BencodeTestData.KeyOrderValid_DataAndTokens), MemberType = typeof(BencodeTestData))]
         public static void WriteKey_ValidationDisabledValidKeyOrder_DoesNotThrow(string bencodeString, BTT[] tokenTypes)
         {
             byte[] bencode = bencodeString.ToUtf8();
@@ -310,7 +304,7 @@ namespace ItsyBitsy.Bencoding.Tests
         }
 
         [Theory]
-        [TupleMemberData(nameof(KeyOrderValid_DataAndTokens))]
+        [TupleMemberData(nameof(BencodeTestData.KeyOrderValid_DataAndTokens), MemberType = typeof(BencodeTestData))]
         public static void WriteKey_ValidationEnabledValidKeyOrder_DoesNotThrow(string bencodeString, BTT[] tokenTypes)
         {
             byte[] bencode = bencodeString.ToUtf8();
@@ -323,16 +317,8 @@ namespace ItsyBitsy.Bencoding.Tests
 
         ////////////////////////////////////////////////////////////////////////////////////////////
 
-        public static readonly (string bencodeString, BTT[] tokenTypes)[] KeyOrderInvalid_DataAndTokens = new[]
-        {
-            ("d1:ai1e1:ai2ee", new BTT[] { BTT.DictionaryHead, BTT.Key, BTT.Integer, BTT.Key, BTT.Integer, BTT.DictionaryTail }),
-            ("d2:aai1e1:ai2ee", new BTT[] { BTT.DictionaryHead, BTT.Key, BTT.Integer, BTT.Key, BTT.Integer, BTT.DictionaryTail }),
-            ("d1:bi1e1:ai2ee", new BTT[] { BTT.DictionaryHead, BTT.Key, BTT.Integer, BTT.Key, BTT.Integer, BTT.DictionaryTail }),
-            ("d1:cd1:ai1ee1:bi2ee", new BTT[] { BTT.DictionaryHead, BTT.Key, BTT.DictionaryHead, BTT.Key, BTT.Integer, BTT.DictionaryTail, BTT.Key, BTT.Integer, BTT.DictionaryTail }),
-        };
-
         [Theory]
-        [TupleMemberData(nameof(KeyOrderInvalid_DataAndTokens))]
+        [TupleMemberData(nameof(BencodeTestData.KeyOrderInvalid_DataAndTokens), MemberType = typeof(BencodeTestData))]
         public static void WriteKey_ValidationDisabledInvalidKeyOrder_DoesNotThrow(string bencodeString, BTT[] tokenTypes)
         {
             byte[] bencode = bencodeString.ToUtf8();
@@ -344,7 +330,7 @@ namespace ItsyBitsy.Bencoding.Tests
         }
 
         [Theory]
-        [TupleMemberData(nameof(KeyOrderInvalid_DataAndTokens))]
+        [TupleMemberData(nameof(BencodeTestData.KeyOrderInvalid_DataAndTokens), MemberType = typeof(BencodeTestData))]
         public static void WriteKey_ValidationEnabledInvalidKeyOrder_ThrowsInvalidOperationException(string bencodeString, BTT[] tokenTypes)
         {
             byte[] bencode = bencodeString.ToUtf8();

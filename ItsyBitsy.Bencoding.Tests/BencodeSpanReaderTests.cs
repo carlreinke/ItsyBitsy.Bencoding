@@ -68,6 +68,86 @@ namespace ItsyBitsy.Bencoding.Tests
 
         ////////////////////////////////////////////////////////////////////////////////////////////
 
+        [Fact]
+        public static void Dispose_ConstructedWithSpan_GoesToDisposedState()
+        {
+            byte[] bencode = "le".ToUtf8();
+            var reader = new BencodeSpanReader(bencode);
+
+            reader.Dispose();
+
+            var ex = AssertThrows<InvalidOperationException>(ref reader, (ref BencodeSpanReader r) => r.ReadListHead());
+
+            Assert.Equal("The reader is not in a state that allows a list head to be read.", ex.Message);
+        }
+
+        [Fact]
+        public static void Dispose_CreatedFromBencodeReader_GoesToDisposedState()
+        {
+            byte[] bencode = "le".ToUtf8();
+            var parentReader = new BencodeReader(bencode);
+            var reader = parentReader.CreateSpanReader();
+
+            reader.Dispose();
+
+            var ex = AssertThrows<InvalidOperationException>(ref reader, (ref BencodeSpanReader r) => r.ReadListHead());
+
+            Assert.Equal("The reader is not in a state that allows a list head to be read.", ex.Message);
+        }
+
+        [Fact]
+        public static void Dispose_TwiceCreatedFromBencodeReader_GoesToDisposedState()
+        {
+            byte[] bencode = "le".ToUtf8();
+            var parentReader = new BencodeReader(bencode);
+            var reader = parentReader.CreateSpanReader();
+
+            reader.Dispose();
+
+            parentReader.ReadListHead();
+
+            reader.Dispose();
+
+            parentReader.ReadListTail();
+        }
+
+        ////////////////////////////////////////////////////////////////////////////////////////////
+
+        internal static void Expect(ref BencodeSpanReader reader, ReadOnlySpan<BTT> tokenTypes)
+        {
+            foreach (var tokenType in tokenTypes)
+            {
+                Assert.Equal(tokenType, reader.ReadTokenType());
+
+                switch (tokenType)
+                {
+                    case BTT.None:
+                        break;
+                    case BTT.Integer:
+                        reader.ReadInteger();
+                        break;
+                    case BTT.String:
+                        reader.ReadString();
+                        break;
+                    case BTT.ListHead:
+                        reader.ReadListHead();
+                        break;
+                    case BTT.ListTail:
+                        reader.ReadListTail();
+                        break;
+                    case BTT.DictionaryHead:
+                        reader.ReadDictionaryHead();
+                        break;
+                    case BTT.DictionaryTail:
+                        reader.ReadDictionaryTail();
+                        break;
+                    case BTT.Key:
+                        reader.ReadKey();
+                        break;
+                }
+            }
+        }
+
         private delegate void BencodeSpanReaderAction(ref BencodeSpanReader reader);
 
         [System.Diagnostics.DebuggerStepThrough]
@@ -118,41 +198,6 @@ namespace ItsyBitsy.Bencoding.Tests
 #pragma warning restore CA1031 // Do not catch general exception types
 
             throw new Xunit.Sdk.ThrowsException(typeof(T));
-        }
-
-        private static void Expect(ref BencodeSpanReader reader, ReadOnlySpan<BTT> tokenTypes)
-        {
-            foreach (var tokenType in tokenTypes)
-            {
-                Assert.Equal(tokenType, reader.ReadTokenType());
-
-                switch (tokenType)
-                {
-                    case BTT.None:
-                        break;
-                    case BTT.Integer:
-                        reader.ReadInteger();
-                        break;
-                    case BTT.String:
-                        reader.ReadString();
-                        break;
-                    case BTT.ListHead:
-                        reader.ReadListHead();
-                        break;
-                    case BTT.ListTail:
-                        reader.ReadListTail();
-                        break;
-                    case BTT.DictionaryHead:
-                        reader.ReadDictionaryHead();
-                        break;
-                    case BTT.DictionaryTail:
-                        reader.ReadDictionaryTail();
-                        break;
-                    case BTT.Key:
-                        reader.ReadKey();
-                        break;
-                }
-            }
         }
     }
 }

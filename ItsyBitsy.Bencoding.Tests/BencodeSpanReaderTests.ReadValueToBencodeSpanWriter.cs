@@ -73,7 +73,7 @@ namespace ItsyBitsy.Bencoding.Tests
 
             reader.ReadValueTo(ref writer);
 
-            Assert.Equal(bencode, buffer.AsSpan(0, writer.Length).ToArray());
+            Assert.Equal(bencode, buffer.AsSpan(0, writer.BufferedLength).ToArray());
         }
 
         [Theory]
@@ -92,7 +92,7 @@ namespace ItsyBitsy.Bencoding.Tests
 
             reader.ReadValueTo(ref writer);
 
-            Assert.Equal(bencode, buffer.AsSpan(0, writer.Length).ToArray());
+            Assert.Equal(bencode, buffer.AsSpan(0, writer.BufferedLength).ToArray());
         }
 
         [Theory]
@@ -112,7 +112,7 @@ namespace ItsyBitsy.Bencoding.Tests
 
             reader.ReadValueTo(ref writer);
 
-            Assert.Equal(bencode, buffer.AsSpan(0, writer.Length).ToArray());
+            Assert.Equal(bencode, buffer.AsSpan(0, writer.BufferedLength).ToArray());
         }
 
         ////////////////////////////////////////////////////////////////////////////////////////////
@@ -274,7 +274,7 @@ namespace ItsyBitsy.Bencoding.Tests
                 var writer = new BencodeSpanWriter();
                 r.ReadValueTo(ref writer);
             });
-            long position = reader.Position;
+            int position = reader.Position;
             var errorTokenType = reader.ReadTokenType();
 
             Assert.Equal(errorMessage, ex.Message);
@@ -296,7 +296,7 @@ namespace ItsyBitsy.Bencoding.Tests
                 var writer = new BencodeSpanWriter();
                 r.ReadValueTo(ref writer);
             });
-            long position = reader.Position;
+            int position = reader.Position;
             var errorTokenType = reader.ReadTokenType();
 
             Assert.Equal(errorMessage, ex.Message);

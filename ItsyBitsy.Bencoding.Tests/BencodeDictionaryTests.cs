@@ -27,7 +27,7 @@ namespace ItsyBitsy.Bencoding.Tests
         public static void Count_Always_ReturnsExpectedValue(string bencodeString, (int keyPosition, string key, int position)[] elements)
         {
             byte[] bencode = bencodeString.ToUtf8();
-            var dictionary = new BencodeDictionary<int>();
+            var dictionary = new BencodeDictionary();
             foreach (var (_, key, position) in elements)
                 Assert.True(dictionary.TryAdd(key.ToUtf8(), position));
 
@@ -41,7 +41,7 @@ namespace ItsyBitsy.Bencoding.Tests
         public static void TryAdd_NonduplicateKey_ReturnsTrue(string bencodeString, (int keyPosition, string key, int position)[] elements)
         {
             byte[] bencode = bencodeString.ToUtf8();
-            var dictionary = new BencodeDictionary<int>();
+            var dictionary = new BencodeDictionary();
             foreach (var (_, key, position) in elements)
                 Assert.True(dictionary.TryAdd(key.ToUtf8(), position));
         }
@@ -51,7 +51,7 @@ namespace ItsyBitsy.Bencoding.Tests
         public static void TryAdd_DuplicateKey_ReturnsFalse(string bencodeString, (int keyPosition, string key, int position)[] elements)
         {
             byte[] bencode = bencodeString.ToUtf8();
-            var dictionary = new BencodeDictionary<int>();
+            var dictionary = new BencodeDictionary();
             foreach (var (_, key, position) in elements)
                 Assert.True(dictionary.TryAdd(key.ToUtf8(), position));
 
@@ -64,7 +64,7 @@ namespace ItsyBitsy.Bencoding.Tests
         public static void GetEnumerator_Always_ReturnsExpectedPositions(string bencodeString, (int keyPosition, string key, int position)[] elements)
         {
             byte[] bencode = bencodeString.ToUtf8();
-            var dictionary = new BencodeDictionary<int>();
+            var dictionary = new BencodeDictionary();
             foreach (var (_, key, position) in elements)
                 Assert.True(dictionary.TryAdd(key.ToUtf8(), position));
 
@@ -87,7 +87,7 @@ namespace ItsyBitsy.Bencoding.Tests
         public static void TryGetPosition_ExistingKey_ReturnsTrueAndExpectedPosition(string bencodeString, (int keyPosition, string key, int position)[] elements)
         {
             byte[] bencode = bencodeString.ToUtf8();
-            var dictionary = new BencodeDictionary<int>();
+            var dictionary = new BencodeDictionary();
             foreach (var (_, key, position) in elements)
                 Assert.True(dictionary.TryAdd(key.ToUtf8(), position));
 
@@ -104,7 +104,7 @@ namespace ItsyBitsy.Bencoding.Tests
         public static void TryGetPosition_NonexistingKey_ReturnsFalseAndDefaultPosition(string bencodeString, (int keyPosition, string key, int position)[] elements, string nonKey)
         {
             byte[] bencode = bencodeString.ToUtf8();
-            var dictionary = new BencodeDictionary<int>();
+            var dictionary = new BencodeDictionary();
             foreach (var (_, key, position) in elements)
                 Assert.True(dictionary.TryAdd(key.ToUtf8(), position));
 

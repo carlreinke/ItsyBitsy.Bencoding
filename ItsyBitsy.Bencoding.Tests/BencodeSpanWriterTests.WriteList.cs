@@ -57,7 +57,7 @@ namespace ItsyBitsy.Bencoding.Tests
             reader.ReadListTail();
             writer.WriteListTail();
 
-            Assert.Equal(listBencode, buffer.AsSpan(0, writer.Length).ToArray());
+            Assert.Equal(listBencode, buffer.AsSpan(0, writer.BufferedLength).ToArray());
         }
 
         [Theory]
@@ -81,7 +81,7 @@ namespace ItsyBitsy.Bencoding.Tests
             reader.ReadDictionaryTail();
             writer.WriteDictionaryTail();
 
-            Assert.Equal(dictionaryBencode, buffer.AsSpan(0, writer.Length).ToArray());
+            Assert.Equal(dictionaryBencode, buffer.AsSpan(0, writer.BufferedLength).ToArray());
         }
 
         [Theory]
@@ -103,7 +103,8 @@ namespace ItsyBitsy.Bencoding.Tests
         [Fact]
         public static void ReadListHead_InErrorState_ThrowsInvalidOperationException()
         {
-            var writer = new BencodeSpanWriter(Array.Empty<byte>());
+            byte[] buffer = Array.Empty<byte>();
+            var writer = new BencodeSpanWriter(buffer);
             _ = AssertThrows<ArgumentException>(ref writer, (ref BencodeSpanWriter w) => w.WriteInteger(1));
 
             var ex = AssertThrows<InvalidOperationException>(ref writer, (ref BencodeSpanWriter w) => w.WriteListHead());
@@ -132,7 +133,8 @@ namespace ItsyBitsy.Bencoding.Tests
         [Fact]
         public static void ReadListTail_InErrorState_ThrowsInvalidOperationException()
         {
-            var writer = new BencodeSpanWriter(new byte[1]);
+            byte[] buffer = new byte[1];
+            var writer = new BencodeSpanWriter(buffer);
             writer.WriteListHead();
             _ = AssertThrows<ArgumentException>(ref writer, (ref BencodeSpanWriter w) => w.WriteInteger(1));
 
@@ -160,7 +162,7 @@ namespace ItsyBitsy.Bencoding.Tests
             reader.ReadListTail();
             writer.WriteListTail();
 
-            Assert.Equal(bencode, buffer.AsSpan(0, writer.Length).ToArray());
+            Assert.Equal(bencode, buffer.AsSpan(0, writer.BufferedLength).ToArray());
         }
 
         [Theory]
@@ -184,7 +186,7 @@ namespace ItsyBitsy.Bencoding.Tests
 
             writer.WriteListTail();
 
-            Assert.Equal(listBencode, buffer.AsSpan(0, writer.Length).ToArray());
+            Assert.Equal(listBencode, buffer.AsSpan(0, writer.BufferedLength).ToArray());
         }
 
         [Theory]
@@ -209,7 +211,7 @@ namespace ItsyBitsy.Bencoding.Tests
 
             writer.WriteDictionaryTail();
 
-            Assert.Equal(dictionaryBencode, buffer.AsSpan(0, writer.Length).ToArray());
+            Assert.Equal(dictionaryBencode, buffer.AsSpan(0, writer.BufferedLength).ToArray());
         }
 
         ////////////////////////////////////////////////////////////////////////////////////////////
@@ -219,11 +221,11 @@ namespace ItsyBitsy.Bencoding.Tests
         {
             byte[] buffer = new byte[1];
             var writer = new BencodeSpanWriter(buffer);
-            int length = writer.Length;
+            int length = writer.BufferedLength;
 
             writer.WriteListHead();
 
-            Assert.Equal(length + 1, writer.Length);
+            Assert.Equal(length + 1, writer.BufferedLength);
         }
 
         [Fact]
@@ -231,11 +233,11 @@ namespace ItsyBitsy.Bencoding.Tests
         {
             byte[] buffer = new byte[2];
             var writer = new BencodeSpanWriter(buffer);
-            int length = writer.Length;
+            int length = writer.BufferedLength;
 
             writer.WriteListHead();
 
-            Assert.Equal(length + 1, writer.Length);
+            Assert.Equal(length + 1, writer.BufferedLength);
         }
 
         [Fact]
@@ -255,11 +257,11 @@ namespace ItsyBitsy.Bencoding.Tests
             byte[] buffer = new byte[2];
             var writer = new BencodeSpanWriter(buffer);
             writer.WriteListHead();
-            int length = writer.Length;
+            int length = writer.BufferedLength;
 
             writer.WriteListTail();
 
-            Assert.Equal(length + 1, writer.Length);
+            Assert.Equal(length + 1, writer.BufferedLength);
         }
 
         [Fact]
@@ -268,11 +270,11 @@ namespace ItsyBitsy.Bencoding.Tests
             byte[] buffer = new byte[3];
             var writer = new BencodeSpanWriter(buffer);
             writer.WriteListHead();
-            int length = writer.Length;
+            int length = writer.BufferedLength;
 
             writer.WriteListTail();
 
-            Assert.Equal(length + 1, writer.Length);
+            Assert.Equal(length + 1, writer.BufferedLength);
         }
 
         [Fact]

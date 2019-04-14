@@ -16,87 +16,95 @@
 // 02110-1301, USA.
 //
 using System;
+using System.Buffers;
 using System.Buffers.Text;
 using System.Collections.Generic;
-using System.Diagnostics;
+using System.Runtime.CompilerServices;
+using static ItsyBitsy.Bencoding.BencodeSpanWriter;
 
 namespace ItsyBitsy.Bencoding
 {
     /// <summary>
     /// A writer that provides generation of bencoded data.
     /// </summary>
-    public sealed class BencodeWriter : IBencodeWriter
+    /// <seealso cref="BencodeSpanWriter"/>
+    public sealed class BencodeWriter
     {
-        private const int _int32MaxDigits = 10;
+        private const int _intMaxDigits = 10;
 
-        private const int _int64MaxDigits = 19;
+        private const int _longMaxDigits = 19;
 
-        private readonly Stack<PreviousKeyRange> _previousKeyStack;
+        private readonly IBufferWriter<byte> _buffer;
 
-        private byte[] _buffer;
+        private readonly Stack<PreviousKey> _previousKeyStack;
 
-        private int _index = 0;
+        private Memory<byte> _memory;
 
-        private BencodeSpanWriter.State _state = BencodeSpanWriter.State.Initial;
+        private int _bufferedLength;
+
+        private State _state;
 
         private BitStack _scopeStack;
 
-        private int _previousKeyIndex = -1;
-
-        private int _previousKeyLength = 0;
+        private PreviousKey _previousKey;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="BencodeWriter"/> class.
+        /// Initializes a new <see cref="BencodeWriter"/> instance using the specified destination
+        /// buffer.
         /// </summary>
+        /// <param name="destination">The destination to write the encoded data into.</param>
         /// <param name="skipValidation">If <see langword="true"/>, keys are not checked for
         ///     mis-ordering and duplication as they are being written.</param>
-        public BencodeWriter(bool skipValidation = false)
+        public BencodeWriter(IBufferWriter<byte> destination, bool skipValidation = false)
         {
-            _buffer = Array.Empty<byte>();
-            if (!skipValidation)
-                _previousKeyStack = new Stack<PreviousKeyRange>();
+            _buffer = destination;
+            _memory = destination.GetMemory();
+            _bufferedLength = 0;
+            _state = State.Initial;
+            _scopeStack = new BitStack();
+            _previousKey = PreviousKey.None;
+            _previousKeyStack = skipValidation ? null : new Stack<PreviousKey>();
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="BencodeWriter"/> class.
+        /// Gets the number of bytes that have been written but not yet flushed to the underlying
+        /// <see cref="IBufferWriter{T}"/>.
         /// </summary>
-        /// <param name="capacity">The initial capacity of the writer.</param>
-        /// <param name="skipValidation">If <see langword="true"/>, keys are not checked for
-        ///     mis-ordering and duplication as they are being written.</param>
-        /// <exception cref="ArgumentOutOfRangeException"><paramref name="capacity"/> is negative.
-        ///     </exception>
-        public BencodeWriter(int capacity, bool skipValidation = false)
-        {
-            if (capacity < 0)
-                throw new ArgumentOutOfRangeException(nameof(capacity));
+        public int BufferedLength => _bufferedLength;
 
-            _buffer = new byte[capacity];
-            if (!skipValidation)
-                _previousKeyStack = new Stack<PreviousKeyRange>();
+        /// <summary>
+        /// Gets a <see cref="BencodeSpanWriter"/> that continues from the current state of this
+        /// writer.
+        /// </summary>
+        /// <returns>A <see cref="BencodeSpanWriter"/> that continues from the current state of this
+        ///     writer.</returns>
+        /// <remarks>
+        /// Do not operate on this writer again until after calling
+        /// <see cref="BencodeSpanWriter.Dispose"/> on the <see cref="BencodeSpanWriter"/>.
+        /// </remarks>
+        public BencodeSpanWriter CreateSpanWriter()
+        {
+            Flush();
+
+            var spanWriter = new BencodeSpanWriter(this, _buffer, _state, _scopeStack, _previousKey, _previousKeyStack);
+
+            _state = State.Error;
+
+            return spanWriter;
         }
 
         /// <summary>
-        /// Gets the current length of the encoded data.
+        /// Advances the underlying <see cref="IBufferWriter{T}"/>.
         /// </summary>
-        public int Length => _index;
-
-        internal int Capacity => _buffer.Length;
-
-        /// <summary>
-        /// Removes all encoded data from the writer.
-        /// </summary>
-        public void Clear()
+        /// <param name="final">Indicates whether the value should be complete.</param>
+        /// <exception cref="InvalidOperationException"><paramref name="final"/> is
+        ///     <see langword="true"/> and the value is incomplete.</exception>
+        public void Flush(bool final = true)
         {
-            Array.Clear(_buffer, 0, _index);
-            ArrayPools.Bytes.Return(_buffer);
+            if (final && _state != State.Final)
+                throw new InvalidOperationException("The value is incomplete.");
 
-            _previousKeyStack?.Clear();
-            _buffer = Array.Empty<byte>();
-            _index = 0;
-            _state = BencodeSpanWriter.State.Initial;
-            _scopeStack.Clear();
-            _previousKeyIndex = -1;
-            _previousKeyLength = 0;
+            Flush();
         }
 
         /// <summary>
@@ -105,33 +113,33 @@ namespace ItsyBitsy.Bencoding
         /// <param name="value">The integer to write.</param>
         /// <exception cref="InvalidOperationException">The writer is not in a state that allows an
         ///     integer to be written.</exception>
+        /// <exception cref="ArgumentException">The writer reached the end of the destination buffer
+        ///     while writing the integer.</exception>
         public void WriteInteger(long value)
         {
-            _state = BencodeSpanWriter.GetStateAfterValue(_state);
+            _state = GetStateAfterValue(_state);
 
             try
             {
-                // 'i', '-', digits, 'e'
-                EnsureWriteCapacity(1 + (1 + _int64MaxDigits) + 1);
+                Span<byte> numberBuffer = stackalloc byte[1 + _longMaxDigits];
+                if (!Utf8Formatter.TryFormat(value, numberBuffer, out int numberLength))
+                    throw new InvalidOperationException("Unreachable!");
 
-                var span = _buffer.AsSpan();
+                EnsureCapacity(1 + numberLength + 1);
 
-                span[_index] = (byte)'i';
-                _index += 1;
+                var span = _memory.Span;
+                span[0] = (byte)'i';
+                span = span.Slice(1);
+                numberBuffer.Slice(0, numberLength).CopyTo(span);
+                span = span.Slice(numberLength);
+                span[0] = (byte)'e';
 
-                if (!Utf8Formatter.TryFormat(value, span.Slice(_index), out int bytesWritten))
-                {
-                    Debug.Assert(false);  // This should be unreachable.
-                    throw new InvalidOperationException("Unexpected behavior.");
-                }
-                _index += bytesWritten;
+                Advance(1 + numberLength + 1);
 
-                span[_index] = (byte)'e';
-                _index += 1;
             }
             catch
             {
-                _state = BencodeSpanWriter.State.Error;
+                _state = State.Error;
                 throw;
             }
         }
@@ -142,35 +150,13 @@ namespace ItsyBitsy.Bencoding
         /// <param name="value">The string to write.</param>
         /// <exception cref="InvalidOperationException">The writer is not in a state that allows a
         ///     string to be written.</exception>
+        /// <exception cref="ArgumentException">The writer reached the end of the destination buffer
+        ///     while writing the string.</exception>
         public void WriteString(ReadOnlySpan<byte> value)
         {
-            _state = BencodeSpanWriter.GetStateAfterValue(_state);
+            _state = GetStateAfterValue(_state);
 
-            try
-            {
-                // digits, ':', body
-                EnsureWriteCapacity(_int32MaxDigits + 1 + value.Length);
-
-                var span = _buffer.AsSpan();
-
-                if (!Utf8Formatter.TryFormat(value.Length, span.Slice(_index), out int bytesWritten))
-                {
-                    Debug.Assert(false);  // This should be unreachable.
-                    throw new InvalidOperationException("Unexpected behavior.");
-                }
-                _index += bytesWritten;
-
-                span[_index] = (byte)':';
-                _index += 1;
-
-                value.CopyTo(span.Slice(_index));
-                _index += value.Length;
-            }
-            catch
-            {
-                _state = BencodeSpanWriter.State.Error;
-                throw;
-            }
+            WriteStringInternal(value);
         }
 
         /// <summary>
@@ -178,20 +164,23 @@ namespace ItsyBitsy.Bencoding
         /// </summary>
         /// <exception cref="InvalidOperationException">The writer is not in a state that allows a
         ///     list head to be written.</exception>
+        /// <exception cref="ArgumentException">The writer reached the end of the destination buffer
+        ///     while writing the list head.</exception>
         public void WriteListHead()
         {
-            _state = BencodeSpanWriter.EnterListScope(_state, ref _scopeStack);
+            _state = EnterListScope(_state, ref _scopeStack);
 
             try
             {
-                EnsureWriteCapacity(1);
+                EnsureCapacity(1);
 
-                _buffer[_index] = (byte)'l';
-                _index += 1;
+                _memory.Span[0] = (byte)'l';
+
+                Advance(1);
             }
             catch
             {
-                _state = BencodeSpanWriter.State.Error;
+                _state = State.Error;
                 throw;
             }
         }
@@ -201,20 +190,23 @@ namespace ItsyBitsy.Bencoding
         /// </summary>
         /// <exception cref="InvalidOperationException">The writer is not in a state that allows a
         ///     list tail to be written.</exception>
+        /// <exception cref="ArgumentException">The writer reached the end of the destination buffer
+        ///     while writing the list tail.</exception>
         public void WriteListTail()
         {
-            _state = BencodeSpanWriter.ExitListScope(_state, ref _scopeStack);
+            _state = ExitListScope(_state, ref _scopeStack);
 
             try
             {
-                EnsureWriteCapacity(1);
+                EnsureCapacity(1);
 
-                _buffer[_index] = (byte)'e';
-                _index += 1;
+                _memory.Span[0] = (byte)'e';
+
+                Advance(1);
             }
             catch
             {
-                _state = BencodeSpanWriter.State.Error;
+                _state = State.Error;
                 throw;
             }
         }
@@ -224,27 +216,29 @@ namespace ItsyBitsy.Bencoding
         /// </summary>
         /// <exception cref="InvalidOperationException">The writer is not in a state that allows a
         ///     dictionary head to be written.</exception>
+        /// <exception cref="ArgumentException">The writer reached the end of the destination buffer
+        ///     while writing the dictionary head.</exception>
         public void WriteDictionaryHead()
         {
-            _state = BencodeSpanWriter.EnterDictionaryScope(_state, ref _scopeStack);
+            _state = EnterDictionaryScope(_state, ref _scopeStack);
 
             if (_previousKeyStack != null)
             {
-                _previousKeyStack.Push(new PreviousKeyRange(_previousKeyIndex, _previousKeyLength));
-                _previousKeyIndex = -1;
-                _previousKeyLength = 0;
+                _previousKeyStack.Push(_previousKey);
+                _previousKey = PreviousKey.None;
             }
 
             try
             {
-                EnsureWriteCapacity(1);
+                EnsureCapacity(1);
 
-                _buffer[_index] = (byte)'d';
-                _index += 1;
+                _memory.Span[0] = (byte)'d';
+
+                Advance(1);
             }
             catch
             {
-                _state = BencodeSpanWriter.State.Error;
+                _state = State.Error;
                 throw;
             }
         }
@@ -254,29 +248,28 @@ namespace ItsyBitsy.Bencoding
         /// </summary>
         /// <exception cref="InvalidOperationException">The writer is not in a state that allows a
         ///     dictionary tail to be written.</exception>
+        /// <exception cref="ArgumentException">The writer reached the end of the destination buffer
+        ///     while writing the dictionary tail.</exception>
         public void WriteDictionaryTail()
         {
-            _state = BencodeSpanWriter.ExitDictionaryScope(_state, ref _scopeStack);
+            _state = ExitDictionaryScope(_state, ref _scopeStack);
 
             if (_previousKeyStack != null)
             {
-                Debug.Assert(_previousKeyStack.Count > 0);
-
-                var previousKey = _previousKeyStack.Pop();
-                _previousKeyIndex = previousKey.Index;
-                _previousKeyLength = previousKey.Length;
+                _previousKey = _previousKeyStack.Pop();
             }
 
             try
             {
-                EnsureWriteCapacity(1);
+                EnsureCapacity(1);
 
-                _buffer[_index] = (byte)'e';
-                _index += 1;
+                _memory.Span[0] = (byte)'e';
+
+                Advance(1);
             }
             catch
             {
-                _state = BencodeSpanWriter.State.Error;
+                _state = State.Error;
                 throw;
             }
         }
@@ -287,166 +280,126 @@ namespace ItsyBitsy.Bencoding
         /// <param name="key">The key to write.</param>
         /// <exception cref="InvalidOperationException">The writer is not in a state that allows a
         ///     key to be written.</exception>
+        /// <exception cref="ArgumentException">The writer reached the end of the destination buffer
+        ///     while writing the key.</exception>
         /// <exception cref="InvalidOperationException">The writer was constructed with validation
         ///     enabled and the key being written is mis-ordered or duplicated.</exception>
         public void WriteKey(ReadOnlySpan<byte> key)
         {
-            _state = BencodeSpanWriter.GetStateAfterKey(_state);
+            _state = GetStateAfterKey(_state);
 
-            // Ensure that keys are ordered and unique.
-            if (_previousKeyIndex != -1)
+            if (_previousKey.HasValue && !IsLess(_previousKey.Span, key))
+                throw new InvalidOperationException("Keys must be ordered and unique.");
+
+            if (_previousKeyStack != null)
+                _previousKey.CopyFrom(key);
+
+            WriteStringInternal(key);
+        }
+
+        internal void RestoreState(State state, BitStack scopeStack, PreviousKey previousKey)
+        {
+            _state = state;
+            _scopeStack = scopeStack;
+            _previousKey = previousKey;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void EnsureCapacity(int pendingLength)
+        {
+            if (_memory.Length < pendingLength)
+                FlushAndEnsureCapacity(pendingLength);
+        }
+
+        private void FlushAndEnsureCapacity(int pendingLength)
+        {
+            if (_bufferedLength > 0)
             {
-                var previousKeySpan = _buffer.AsSpan(_previousKeyIndex, _previousKeyLength);
-
-                if (!IsLess(previousKeySpan, key))
-                    throw new InvalidOperationException("Keys must be ordered and unique.");
+                _buffer.Advance(_bufferedLength);
+                _bufferedLength = 0;
             }
+            _memory = _buffer.GetMemory(pendingLength);
 
+            if (_memory.Length < pendingLength)
+                throw new ArgumentException($"Reached the end of the destination buffer while attempting to write.");
+        }
+
+        private void FlushAndRequestCapacity(int pendingLength)
+        {
+            if (_bufferedLength > 0)
+            {
+                _buffer.Advance(_bufferedLength);
+                _bufferedLength = 0;
+            }
+            _memory = _buffer.GetMemory(pendingLength);
+
+            if (_memory.Length == 0)
+                throw new ArgumentException($"Reached the end of the destination buffer while attempting to write.");
+        }
+
+        private void Flush()
+        {
+            if (_bufferedLength > 0)
+            {
+                _buffer.Advance(_bufferedLength);
+                _bufferedLength = 0;
+            }
+            _memory = Memory<byte>.Empty;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void Advance(int length)
+        {
+            _memory = _memory.Slice(length);
+            _bufferedLength += length;
+        }
+
+        private void WriteStringInternal(ReadOnlySpan<byte> value)
+        {
             try
             {
-                // digits, ':', body
-                EnsureWriteCapacity(_int32MaxDigits + 1 + key.Length);
+                Span<byte> numberBuffer = stackalloc byte[_intMaxDigits];
+                if (!Utf8Formatter.TryFormat(value.Length, numberBuffer, out int numberLength))
+                    throw new InvalidOperationException("Unreachable!");
 
-                var span = _buffer.AsSpan();
+                EnsureCapacity(numberLength + 1);
 
-                if (!Utf8Formatter.TryFormat(key.Length, span.Slice(_index), out int bytesWritten))
-                {
-                    Debug.Assert(false);  // This should be unreachable.
-                    throw new InvalidOperationException("Unexpected behavior.");
-                }
-                _index += bytesWritten;
+                var span = _memory.Span;
+                numberBuffer.Slice(0, numberLength).CopyTo(span);
+                span = span.Slice(numberLength);
+                span[0] = (byte)':';
 
-                span[_index] = (byte)':';
-                _index += 1;
+                Advance(numberLength + 1);
 
-                int keyIndex = _index;
-
-                key.CopyTo(span.Slice(_index));
-                _index += key.Length;
-
-                if (_previousKeyStack != null)
-                {
-                    _previousKeyIndex = keyIndex;
-                    _previousKeyLength = key.Length;
-                }
+                WriteIncrementally(value);
             }
             catch
             {
-                _state = BencodeSpanWriter.State.Error;
+                _state = State.Error;
                 throw;
             }
         }
 
-        /// <summary>
-        /// Returns a buffer containing the encoded data.
-        /// </summary>
-        /// <returns>A buffer containing the encoded data.</returns>
-        /// <exception cref="InvalidOperationException">The value being written is incomplete.
-        ///     </exception>
-        public byte[] Encode()
+        private void WriteIncrementally(ReadOnlySpan<byte> value)
         {
-            if (_state != BencodeSpanWriter.State.Final)
-                throw new InvalidOperationException("The value is incomplete.");
-
-            return _buffer.AsSpan(0, _index).ToArray();
-        }
-
-        /// <summary>
-        /// Writes the encoded data into a buffer.
-        /// </summary>
-        /// <param name="destination">The buffer that the encoded data will be written into.</param>
-        /// <exception cref="InvalidOperationException">The value being written is incomplete.
-        ///     </exception>
-        /// <exception cref="ArgumentException">The length of the encoded data is greater than the
-        ///     length of the buffer.</exception>
-        public void EncodeTo(Span<byte> destination)
-        {
-            if (_state != BencodeSpanWriter.State.Final)
-                throw new InvalidOperationException("The value is incomplete.");
-
-            _buffer.AsSpan(0, _index).CopyTo(destination);
-        }
-
-        /// <summary>
-        /// Attempts to write the encoded data into a buffer.
-        /// </summary>
-        /// <param name="destination">The buffer that the encoded data will be written into.</param>
-        /// <returns><see langword="false"/> if the length of the encoded data is greater than the
-        ///     length of the buffer; otherwise, <see langword="true"/>.</returns>
-        /// <exception cref="InvalidOperationException">The value being written is incomplete.
-        ///     </exception>
-        public bool TryEncodeTo(Span<byte> destination)
-        {
-            if (_state != BencodeSpanWriter.State.Final)
-                throw new InvalidOperationException("The value is incomplete.");
-
-            return _buffer.AsSpan(0, _index).TryCopyTo(destination);
-        }
-
-        /// <summary>
-        /// Transfers ownership of the encoded data buffers and clears the writer.
-        /// </summary>
-        /// <returns>The encoded data buffers.</returns>
-        /// <exception cref="InvalidOperationException">The value being written is incomplete.
-        ///     </exception>
-        public ReadOnlyMemory<byte> TransferEncoded()
-        {
-            if (_state != BencodeSpanWriter.State.Final)
-                throw new InvalidOperationException("The value is incomplete.");
-
-            var buffer = _buffer.AsMemory(0, _index);
-            _buffer = Array.Empty<byte>();
-            _index = 0;
-            Clear();
-            return buffer;
-        }
-
-        private static bool IsLess(ReadOnlySpan<byte> x, ReadOnlySpan<byte> y)
-        {
-            for (int i = 0; i < y.Length; ++i)
+            for (; ; )
             {
-                // Check if `x` ends first.
-                if (i == x.Length)
-                    return true;
+                Span<byte> span = _memory.Span;
+                int length = span.Length;
 
-                // Compare first position with differing data.
-                if (x[i] != y[i])
-                    return x[i] < y[i];
-            }
+                if (length >= value.Length)
+                {
+                    value.CopyTo(span);
+                    Advance(value.Length);
+                    return;
+                }
 
-            // Otherwise `y` ends first or both are equal.
-            return false;
-        }
+                value.Slice(0, length).CopyTo(span);
+                Advance(length);
 
-        private void EnsureWriteCapacity(int pendingCount)
-        {
-            if (pendingCount < 0)
-                throw new OverflowException();
+                value = value.Slice(length);
 
-            if (_buffer.Length - _index < pendingCount)
-            {
-                const int blockSize = 1024;
-                int blocks = checked(_index + pendingCount + (blockSize - 1)) / blockSize;
-                byte[] newBuffer = ArrayPools.Bytes.Rent(blockSize * blocks);
-
-                Buffer.BlockCopy(_buffer, 0, newBuffer, 0, _index);
-                Array.Clear(_buffer, 0, _index);
-                ArrayPools.Bytes.Return(_buffer);
-
-                _buffer = newBuffer;
-            }
-        }
-
-        private struct PreviousKeyRange
-        {
-            public readonly int Index;
-
-            public readonly int Length;
-
-            public PreviousKeyRange(int index, int length)
-            {
-                Index = index;
-                Length = length;
+                FlushAndRequestCapacity(0);
             }
         }
     }
