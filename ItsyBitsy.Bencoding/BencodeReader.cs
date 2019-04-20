@@ -401,7 +401,7 @@ namespace ItsyBitsy.Bencoding
         {
             ReadDictionaryHead();
 
-            var dictionary = new BencodeDictionary();
+            var builder = new BencodeDictionary.Builder();
 
             int duplicateKeyPosition = -1;
 
@@ -411,7 +411,7 @@ namespace ItsyBitsy.Bencoding
 
                 ReadOnlyMemory<byte> key = ReadKey();
 
-                if (!(dictionary.TryAdd(key, Position) || skipDuplicateKeys))
+                if (!(builder.TryAdd(key, Position) || skipDuplicateKeys))
                     if (duplicateKeyPosition == -1)
                         duplicateKeyPosition = keyPosition;
 
@@ -423,7 +423,7 @@ namespace ItsyBitsy.Bencoding
             if (duplicateKeyPosition != -1)
                 throw new InvalidBencodeException("The keys of the dictionary are not unique.", duplicateKeyPosition);
 
-            return dictionary;
+            return builder.ToDictionary();
         }
 
         /// <summary>

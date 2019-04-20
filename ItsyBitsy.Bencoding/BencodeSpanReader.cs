@@ -419,7 +419,7 @@ namespace ItsyBitsy.Bencoding
         {
             ReadDictionaryHead();
 
-            var dictionary = new BencodeSpanDictionary(_span);
+            var builder = new BencodeSpanDictionary.Builder(_span);
 
             int duplicateKeyIndex = -1;
 
@@ -429,7 +429,7 @@ namespace ItsyBitsy.Bencoding
 
                 ReadOnlySpan<byte> key = ReadKey();
 
-                if (!(dictionary.TryAdd(_index - key.Length, key.Length) || skipDuplicateKeys))
+                if (!(builder.TryAdd(_index - key.Length, key.Length) || skipDuplicateKeys))
                     if (duplicateKeyIndex == -1)
                         duplicateKeyIndex = keyIndex;
 
@@ -441,7 +441,7 @@ namespace ItsyBitsy.Bencoding
             if (duplicateKeyIndex != -1)
                 throw new InvalidBencodeException("The keys of the dictionary are not unique.", duplicateKeyIndex);
 
-            return dictionary;
+            return builder.ToDictionary();
         }
 
         /// <summary>

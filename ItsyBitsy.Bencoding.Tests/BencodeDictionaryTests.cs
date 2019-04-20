@@ -22,14 +22,36 @@ namespace ItsyBitsy.Bencoding.Tests
 {
     public static class BencodeDictionaryTests
     {
+        [Fact]
+        public static void Count_DefaultInstance_ReturnsZero()
+        {
+            BencodeDictionary dictionary = default;
+
+            int count = dictionary.Count;
+
+            Assert.Equal(0, count);
+        }
+
+        [Fact]
+        public static void GetEnumerator_DefaultInstance_ReturnsEmptyEnumerator()
+        {
+            BencodeDictionary dictionary = default;
+
+            int i = 0;
+            foreach (var _ in dictionary)
+                i += 1;
+            Assert.Equal(0, i);
+        }
+
         [Theory]
-        [TupleMemberData(nameof(BencodeSpanDictionaryTests.DataAndElements), MemberType = typeof(BencodeSpanDictionaryTests))]
+        [TupleMemberData(nameof(BencodeDictionaryTestData.DataAndElements), MemberType = typeof(BencodeDictionaryTestData))]
         public static void Count_Always_ReturnsExpectedValue(string bencodeString, (int keyPosition, string key, int position)[] elements)
         {
             byte[] bencode = bencodeString.ToUtf8();
-            var dictionary = new BencodeDictionary();
+            var builder = new BencodeDictionary.Builder();
             foreach (var (_, key, position) in elements)
-                Assert.True(dictionary.TryAdd(key.ToUtf8(), position));
+                Assert.True(builder.TryAdd(key.ToUtf8(), position));
+            var dictionary = builder.ToDictionary();
 
             int count = dictionary.Count;
 
@@ -37,36 +59,14 @@ namespace ItsyBitsy.Bencoding.Tests
         }
 
         [Theory]
-        [TupleMemberData(nameof(BencodeSpanDictionaryTests.DataAndElements), MemberType = typeof(BencodeSpanDictionaryTests))]
-        public static void TryAdd_NonduplicateKey_ReturnsTrue(string bencodeString, (int keyPosition, string key, int position)[] elements)
-        {
-            byte[] bencode = bencodeString.ToUtf8();
-            var dictionary = new BencodeDictionary();
-            foreach (var (_, key, position) in elements)
-                Assert.True(dictionary.TryAdd(key.ToUtf8(), position));
-        }
-
-        [Theory]
-        [TupleMemberData(nameof(BencodeSpanDictionaryTests.DataAndElements), MemberType = typeof(BencodeSpanDictionaryTests))]
-        public static void TryAdd_DuplicateKey_ReturnsFalse(string bencodeString, (int keyPosition, string key, int position)[] elements)
-        {
-            byte[] bencode = bencodeString.ToUtf8();
-            var dictionary = new BencodeDictionary();
-            foreach (var (_, key, position) in elements)
-                Assert.True(dictionary.TryAdd(key.ToUtf8(), position));
-
-            foreach (var (_, key, position) in elements)
-                Assert.False(dictionary.TryAdd(key.ToUtf8(), position));
-        }
-
-        [Theory]
-        [TupleMemberData(nameof(BencodeSpanDictionaryTests.DataAndElements), MemberType = typeof(BencodeSpanDictionaryTests))]
+        [TupleMemberData(nameof(BencodeDictionaryTestData.DataAndElements), MemberType = typeof(BencodeDictionaryTestData))]
         public static void GetEnumerator_Always_ReturnsExpectedPositions(string bencodeString, (int keyPosition, string key, int position)[] elements)
         {
             byte[] bencode = bencodeString.ToUtf8();
-            var dictionary = new BencodeDictionary();
+            var builder = new BencodeDictionary.Builder();
             foreach (var (_, key, position) in elements)
-                Assert.True(dictionary.TryAdd(key.ToUtf8(), position));
+                Assert.True(builder.TryAdd(key.ToUtf8(), position));
+            var dictionary = builder.ToDictionary();
 
             var sortedElements = elements
                 .OrderBy(x => x.key.ToUtf8(), BencodeStringComparer.Instance)
@@ -76,20 +76,21 @@ namespace ItsyBitsy.Bencoding.Tests
             {
                 var (_, expectedKey, expectedPosition) = sortedElements[i];
                 Assert.Equal(expectedKey.ToUtf8(), element.Key.ToArray());
-                Assert.Equal(expectedPosition, element.Value);
+                Assert.Equal(expectedPosition, element.Position);
                 i += 1;
             }
             Assert.Equal(elements.Length, i);
         }
 
         [Theory]
-        [TupleMemberData(nameof(BencodeSpanDictionaryTests.DataAndElements), MemberType = typeof(BencodeSpanDictionaryTests))]
+        [TupleMemberData(nameof(BencodeDictionaryTestData.DataAndElements), MemberType = typeof(BencodeDictionaryTestData))]
         public static void TryGetPosition_ExistingKey_ReturnsTrueAndExpectedPosition(string bencodeString, (int keyPosition, string key, int position)[] elements)
         {
             byte[] bencode = bencodeString.ToUtf8();
-            var dictionary = new BencodeDictionary();
+            var builder = new BencodeDictionary.Builder();
             foreach (var (_, key, position) in elements)
-                Assert.True(dictionary.TryAdd(key.ToUtf8(), position));
+                Assert.True(builder.TryAdd(key.ToUtf8(), position));
+            var dictionary = builder.ToDictionary();
 
             foreach (var (_, key, expectedPosition) in elements)
             {
@@ -100,13 +101,14 @@ namespace ItsyBitsy.Bencoding.Tests
         }
 
         [Theory]
-        [TupleMemberData(nameof(BencodeSpanDictionaryTests.DataAndElementsAndNonKey), MemberType = typeof(BencodeSpanDictionaryTests))]
+        [TupleMemberData(nameof(BencodeDictionaryTestData.DataAndElementsAndNonKey), MemberType = typeof(BencodeDictionaryTestData))]
         public static void TryGetPosition_NonexistingKey_ReturnsFalseAndDefaultPosition(string bencodeString, (int keyPosition, string key, int position)[] elements, string nonKey)
         {
             byte[] bencode = bencodeString.ToUtf8();
-            var dictionary = new BencodeDictionary();
+            var builder = new BencodeDictionary.Builder();
             foreach (var (_, key, position) in elements)
-                Assert.True(dictionary.TryAdd(key.ToUtf8(), position));
+                Assert.True(builder.TryAdd(key.ToUtf8(), position));
+            var dictionary = builder.ToDictionary();
 
             foreach (var (_, key, expectedPosition) in elements)
                 Assert.True(dictionary.TryGetPosition(key.ToUtf8(), out _));
@@ -114,6 +116,42 @@ namespace ItsyBitsy.Bencoding.Tests
             int resultPosition;
             Assert.False(dictionary.TryGetPosition(nonKey.ToUtf8(), out resultPosition));
             Assert.Equal(default, resultPosition);
+        }
+
+        public static class Builder
+        {
+            [Fact]
+            public static void Capacity_DefaultInstance_ReturnsZero()
+            {
+                BencodeDictionary.Builder builder = default;
+
+                int count = builder.Capacity;
+
+                Assert.Equal(0, count);
+            }
+
+            [Theory]
+            [TupleMemberData(nameof(BencodeDictionaryTestData.DataAndElements), MemberType = typeof(BencodeDictionaryTestData))]
+            public static void TryAdd_NonduplicateKey_ReturnsTrue(string bencodeString, (int keyPosition, string key, int position)[] elements)
+            {
+                byte[] bencode = bencodeString.ToUtf8();
+                var builder = new BencodeDictionary.Builder();
+                foreach (var (_, key, position) in elements)
+                    Assert.True(builder.TryAdd(key.ToUtf8(), position));
+            }
+
+            [Theory]
+            [TupleMemberData(nameof(BencodeDictionaryTestData.DataAndElements), MemberType = typeof(BencodeDictionaryTestData))]
+            public static void TryAdd_DuplicateKey_ReturnsFalse(string bencodeString, (int keyPosition, string key, int position)[] elements)
+            {
+                byte[] bencode = bencodeString.ToUtf8();
+                var builder = new BencodeDictionary.Builder();
+                foreach (var (_, key, position) in elements)
+                    Assert.True(builder.TryAdd(key.ToUtf8(), position));
+
+                foreach (var (_, key, position) in elements)
+                    Assert.False(builder.TryAdd(key.ToUtf8(), position));
+            }
         }
     }
 }
