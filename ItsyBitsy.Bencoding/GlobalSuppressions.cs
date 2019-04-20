@@ -15,6 +15,7 @@
 // if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 // 02110-1301, USA.
 //
+[assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1034:Nested types should not be visible", Justification = "Nested type avoids name conflict with comparable system type.", Scope = "type", Target = "~T:ItsyBitsy.Bencoding.BencodeList.Enumerator")]
 [assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1034:Nested types should not be visible", Justification = "Nested type avoids name conflict with comparable system type.", Scope = "type", Target = "~T:ItsyBitsy.Bencoding.BencodeDictionary.Enumerator")]
 [assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1034:Nested types should not be visible", Justification = "Nested type avoids name conflict with comparable system type.", Scope = "type", Target = "~T:ItsyBitsy.Bencoding.BencodeDictionary.KeyPositionPair")]
 [assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1034:Nested types should not be visible", Justification = "Nested type avoids name conflict with comparable system type.", Scope = "type", Target = "~T:ItsyBitsy.Bencoding.BencodeSpanDictionary.Enumerator")]
@@ -24,6 +25,7 @@
 [assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1711:Identifiers should not have incorrect suffix", Justification = "The type represents a bencode dictionary.", Scope = "type", Target = "~T:ItsyBitsy.Bencoding.BencodeDictionary")]
 [assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1711:Identifiers should not have incorrect suffix", Justification = "The type represents a bencode dictionary.", Scope = "type", Target = "~T:ItsyBitsy.Bencoding.BencodeSpanDictionary")]
 [assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1720:Identifier contains type name", Justification = "The enumeration values represent types.", Scope = "type", Target = "~T:ItsyBitsy.Bencoding.BencodeTokenType")]
+[assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1815:Override equals and operator equals on value types", Justification = "A list should never be compared for equality.", Scope = "type", Target = "~T:ItsyBitsy.Bencoding.BencodeList")]
 [assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1815:Override equals and operator equals on value types", Justification = "A dictionary should never be compared for equality.", Scope = "type", Target = "~T:ItsyBitsy.Bencoding.BencodeDictionary")]
 [assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1815:Override equals and operator equals on value types", Justification = "A dictionary should never be compared for equality.", Scope = "type", Target = "~T:ItsyBitsy.Bencoding.BencodeSpanDictionary")]
 [assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1815:Override equals and operator equals on value types", Justification = "A span reader should never be compared for equality.", Scope = "type", Target = "~T:ItsyBitsy.Bencoding.BencodeSpanReader")]

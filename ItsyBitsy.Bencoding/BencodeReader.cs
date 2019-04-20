@@ -16,7 +16,6 @@
 // 02110-1301, USA.
 //
 using System;
-using System.Collections.Generic;
 using static ItsyBitsy.Bencoding.BencodeSpanReader;
 
 namespace ItsyBitsy.Bencoding
@@ -317,22 +316,22 @@ namespace ItsyBitsy.Bencoding
         ///     length that is not in the supported range.</exception>
         /// <exception cref="UnsupportedBencodeException">The reader encountered a key with a length
         ///     that is not in the supported range.</exception>
-        public List<int> ReadList()
+        public BencodeList ReadList()
         {
             ReadListHead();
 
-            var list = new List<int>();
+            var builder = new BencodeList.Builder();
 
             while (ReadTokenType() != BencodeTokenType.ListTail)
             {
-                list.Add(Position);
+                builder.Add(Position);
 
                 SkipValue();
             }
 
             ReadListTail();
 
-            return list;
+            return builder.ToList();
         }
 
         /// <summary>
