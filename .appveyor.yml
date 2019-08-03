@@ -21,3 +21,6 @@ test_script:
 - pwsh: codecov --file *\coverage.xml --flag $Env:configuration
 artifacts:
 - path: '**\*.nupkg'
+  name: NuGet package
+- path: ItsyBitsy.Bencoding.Docs\bin\Docs\
+  name: docs

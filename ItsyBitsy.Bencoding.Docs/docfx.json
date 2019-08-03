@@ -1,0 +1,35 @@
+{
+  "metadata": [
+    {
+      "src": [
+        {
+          "files": [
+            "ItsyBitsy.Bencoding/ItsyBitsy.Bencoding.csproj"
+          ],
+          "src": "../"
+        }
+      ],
+      "dest": "obj/docfx/api",
+      "shouldSkipMarkup": true
+    }
+  ],
+  "build": {
+    "content": [
+      {
+        "files": [
+          "api/**.yml"
+        ],
+        "src": "obj/docfx/"
+      },
+      {
+        "files": [
+          "api/index.md",
+          "toc.yml",
+          "*.md"
+        ]
+      },
+    ],
+    "dest": "bin/Docs",
+    "disableGitFeatures": true
+  }
+}
