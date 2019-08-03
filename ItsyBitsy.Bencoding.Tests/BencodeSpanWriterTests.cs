@@ -16,6 +16,7 @@
 // 02110-1301, USA.
 //
 using System;
+using System.Buffers;
 using Xunit;
 using BTT = ItsyBitsy.Bencoding.BencodeTokenType;
 
@@ -23,6 +24,16 @@ namespace ItsyBitsy.Bencoding.Tests
 {
     public static partial class BencodeSpanWriterTests
     {
+        [Fact]
+        public static void Constructor_DestinationIsNull_ThrowsArgumentNullException()
+        {
+            var ex = Assert.Throws<ArgumentNullException>(() => new BencodeSpanWriter((IBufferWriter<byte>)null));
+
+            Assert.Equal("destination", ex.ParamName);
+        }
+
+        ////////////////////////////////////////////////////////////////////////////////////////////
+
         [Fact]
         public static void BufferedLength_DefaultInstance_IsZero()
         {

@@ -74,8 +74,13 @@ namespace ItsyBitsy.Bencoding
         /// <param name="destination">The destination to write the encoded data into.</param>
         /// <param name="skipValidation">If <see langword="true"/>, keys are not checked for
         ///     mis-ordering and duplication as they are being written.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="destination"/> is
+        ///     <see langword="null"/>.</exception>
         public BencodeSpanWriter(IBufferWriter<byte> destination, bool skipValidation = false)
         {
+            if (destination == null)
+                throw new ArgumentNullException(nameof(destination));
+
             _parent = null;
             _buffer = destination;
             _span = destination.GetSpan();
