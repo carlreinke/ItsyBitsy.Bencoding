@@ -14,7 +14,7 @@ build:
   parallel: true
   verbosity: minimal
 before_build:
-- pwsh: nuget restore
+- pwsh: nuget restore -Verbosity quiet
 - pwsh: dotnet tool install --global Codecov.Tool --version 1.7.1
 test_script:
 - pwsh: dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput=coverage.xml
