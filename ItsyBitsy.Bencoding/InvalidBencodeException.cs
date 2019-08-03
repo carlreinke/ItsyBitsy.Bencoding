@@ -85,7 +85,7 @@ namespace ItsyBitsy.Bencoding
         /// The position in the stream where the error occurred.
         /// </summary>
         [field: NonSerialized]
-        public long Position { get; set; } = -1;
+        public long Position { get; private set; } = -1;
 
         /// <summary>
         /// Sets the <see cref="SerializationInfo"/> with information about the exception.

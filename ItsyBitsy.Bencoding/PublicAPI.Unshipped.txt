@@ -121,10 +121,8 @@ ItsyBitsy.Bencoding.InvalidBencodeException.InvalidBencodeException(string messa
 ItsyBitsy.Bencoding.InvalidBencodeException.InvalidBencodeException(string message, System.Exception inner) -> void
 ItsyBitsy.Bencoding.InvalidBencodeException.InvalidBencodeException(string message, long position) -> void
 ItsyBitsy.Bencoding.InvalidBencodeException.Position.get -> long
-ItsyBitsy.Bencoding.InvalidBencodeException.Position.set -> void
 ItsyBitsy.Bencoding.UnsupportedBencodeException
 ItsyBitsy.Bencoding.UnsupportedBencodeException.Position.get -> long
-ItsyBitsy.Bencoding.UnsupportedBencodeException.Position.set -> void
 ItsyBitsy.Bencoding.UnsupportedBencodeException.UnsupportedBencodeException() -> void
 ItsyBitsy.Bencoding.UnsupportedBencodeException.UnsupportedBencodeException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context) -> void
 ItsyBitsy.Bencoding.UnsupportedBencodeException.UnsupportedBencodeException(string message) -> void
