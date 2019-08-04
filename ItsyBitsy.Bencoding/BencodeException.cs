@@ -38,7 +38,7 @@ namespace ItsyBitsy.Bencoding
         /// specified error message.
         /// </summary>
         /// <param name="message">The error message.</param>
-        protected BencodeException(string message)
+        protected BencodeException(string? message)
             : base(message)
         {
         }
@@ -49,7 +49,7 @@ namespace ItsyBitsy.Bencoding
         /// </summary>
         /// <param name="message">The error message.</param>
         /// <param name="inner">The inner exception that is the cause of this exception.</param>
-        protected BencodeException(string message, Exception inner)
+        protected BencodeException(string? message, Exception? inner)
             : base(message, inner)
         {
         }

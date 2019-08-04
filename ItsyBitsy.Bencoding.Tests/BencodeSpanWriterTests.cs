@@ -27,7 +27,7 @@ namespace ItsyBitsy.Bencoding.Tests
         [Fact]
         public static void Constructor_DestinationIsNull_ThrowsArgumentNullException()
         {
-            var ex = Assert.Throws<ArgumentNullException>(() => new BencodeSpanWriter((IBufferWriter<byte>)null));
+            var ex = Assert.Throws<ArgumentNullException>(() => new BencodeSpanWriter((IBufferWriter<byte>)null!));
 
             Assert.Equal("destination", ex.ParamName);
         }

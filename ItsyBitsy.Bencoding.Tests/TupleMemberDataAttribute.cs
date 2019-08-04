@@ -42,7 +42,7 @@ namespace ItsyBitsy.Bencoding.Tests
         {
         }
 
-        protected override object[] ConvertDataItem(MethodInfo testMethod, object item)
+        protected override object?[]? ConvertDataItem(MethodInfo testMethod, object? item)
         {
             if (item == null)
                 return null;
@@ -51,7 +51,7 @@ namespace ItsyBitsy.Bencoding.Tests
             if (tuple == null)
                 throw new ArgumentException($"Property {MemberName} on {MemberType ?? testMethod.DeclaringType} yielded an item that is not an ITuple.");
 
-            var objs = new object[tuple.Length];
+            var objs = new object?[tuple.Length];
             for (int i = 0; i < objs.Length; ++i)
                 objs[i] = tuple[i];
             return objs;

@@ -32,11 +32,11 @@ namespace ItsyBitsy.Bencoding
 
         private const int _longMaxDigits = 19;
 
-        private readonly BencodeWriter _parent;
+        private readonly BencodeWriter? _parent;
 
-        private readonly IBufferWriter<byte> _buffer;
+        private readonly IBufferWriter<byte>? _buffer;
 
-        private readonly Stack<PreviousKey> _previousKeyStack;
+        private readonly Stack<PreviousKey>? _previousKeyStack;
 
         private Span<byte> _span;
 
@@ -91,7 +91,7 @@ namespace ItsyBitsy.Bencoding
             _previousKeyStack = skipValidation ? null : new Stack<PreviousKey>();
         }
 
-        internal BencodeSpanWriter(BencodeWriter parent, IBufferWriter<byte> destination, State state, BitStack scopeStack, PreviousKey previousKey, Stack<PreviousKey> previousKeyStack)
+        internal BencodeSpanWriter(BencodeWriter parent, IBufferWriter<byte> destination, State state, BitStack scopeStack, PreviousKey previousKey, Stack<PreviousKey>? previousKeyStack)
         {
             _parent = parent;
             _buffer = destination;
@@ -562,7 +562,7 @@ namespace ItsyBitsy.Bencoding
         {
             public static readonly PreviousKey None = default;
 
-            private byte[] _array;
+            private byte[]? _array;
 
             private int _length;
 

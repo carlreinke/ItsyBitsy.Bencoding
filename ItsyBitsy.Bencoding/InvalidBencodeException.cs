@@ -38,7 +38,7 @@ namespace ItsyBitsy.Bencoding
         /// specified error message.
         /// </summary>
         /// <param name="message">The error message.</param>
-        public InvalidBencodeException(string message)
+        public InvalidBencodeException(string? message)
             : base(message)
         {
         }
@@ -49,7 +49,7 @@ namespace ItsyBitsy.Bencoding
         /// </summary>
         /// <param name="message">The error message.</param>
         /// <param name="inner">The inner exception that is the cause of this exception.</param>
-        public InvalidBencodeException(string message, Exception inner)
+        public InvalidBencodeException(string? message, Exception? inner)
             : base(message, inner)
         {
         }
@@ -60,7 +60,7 @@ namespace ItsyBitsy.Bencoding
         /// </summary>
         /// <param name="message">The error message.</param>
         /// <param name="position">The position in the stream where the error occurred.</param>
-        public InvalidBencodeException(string message, long position)
+        public InvalidBencodeException(string? message, long position)
             : base(message)
         {
             Position = position;

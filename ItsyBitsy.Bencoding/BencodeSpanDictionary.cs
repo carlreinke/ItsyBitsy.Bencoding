@@ -15,6 +15,10 @@
 // if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 // 02110-1301, USA.
 //
+#if NETSTANDARD2_0
+#pragma warning disable CS8602
+#endif
+
 using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -193,7 +197,7 @@ namespace ItsyBitsy.Bencoding
         {
             private readonly ReadOnlySpan<byte> _span;
 
-            private KeyRange[] _keyRanges;
+            private KeyRange[]? _keyRanges;
 
             private int _count;
 
@@ -206,7 +210,11 @@ namespace ItsyBitsy.Bencoding
 
             internal int Capacity => _keyRanges?.Length ?? 0;
 
-            internal BencodeSpanDictionary ToDictionary() => new BencodeSpanDictionary(_span, _keyRanges, _count);
+            internal BencodeSpanDictionary ToDictionary()
+            {
+                Debug.Assert(_keyRanges != null || _count == 0);
+                return new BencodeSpanDictionary(_span, _keyRanges!, _count);
+            }
 
             internal bool TryAdd(int keyIndex, int keyLength)
             {
@@ -220,6 +228,7 @@ namespace ItsyBitsy.Bencoding
                     InsertLast(keyRange);
                     return true;
                 }
+                Debug.Assert(_keyRanges != null);
 
                 ReadOnlySpan<byte> key = SliceKey(_span, keyRange);
 
@@ -246,6 +255,7 @@ namespace ItsyBitsy.Bencoding
             private void InsertLast(KeyRange keyRange)
             {
                 EnsureCapacity();
+                Debug.Assert(_keyRanges != null);
 
                 _keyRanges[_count] = keyRange;
                 _count += 1;
@@ -254,6 +264,7 @@ namespace ItsyBitsy.Bencoding
             private void Insert(int index, KeyRange keyRange)
             {
                 EnsureCapacity();
+                Debug.Assert(_keyRanges != null);
 
                 Array.Copy(_keyRanges, index, _keyRanges, index + 1, _count - index);
                 _keyRanges[index] = keyRange;

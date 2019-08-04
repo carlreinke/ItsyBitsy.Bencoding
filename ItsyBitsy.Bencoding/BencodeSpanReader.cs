@@ -26,7 +26,7 @@ namespace ItsyBitsy.Bencoding
     /// </summary>
     public ref struct BencodeSpanReader
     {
-        private readonly BencodeReader _parent;
+        private readonly BencodeReader? _parent;
 
         private readonly ReadOnlySpan<byte> _span;
 

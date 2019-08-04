@@ -36,7 +36,7 @@ namespace ItsyBitsy.Bencoding
 
         private readonly IBufferWriter<byte> _buffer;
 
-        private readonly Stack<PreviousKey> _previousKeyStack;
+        private readonly Stack<PreviousKey>? _previousKeyStack;
 
         private Memory<byte> _memory;
 

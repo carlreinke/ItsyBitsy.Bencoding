@@ -29,7 +29,7 @@ namespace ItsyBitsy.Bencoding.Tests
             byte[] bencode = "i1e".ToUtf8();
             var reader = new BencodeSpanReader(bencode);
 
-            var ex = AssertThrows<ArgumentNullException>(ref reader, (ref BencodeSpanReader r) => r.ReadValueTo(null));
+            var ex = AssertThrows<ArgumentNullException>(ref reader, (ref BencodeSpanReader r) => r.ReadValueTo(null!));
 
             Assert.Equal("writer", ex.ParamName);
         }

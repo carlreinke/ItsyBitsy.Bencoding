@@ -39,7 +39,7 @@ namespace ItsyBitsy.Bencoding
         /// the specified error message.
         /// </summary>
         /// <param name="message">The error message.</param>
-        public UnsupportedBencodeException(string message)
+        public UnsupportedBencodeException(string? message)
             : base(message)
         {
         }
@@ -50,7 +50,7 @@ namespace ItsyBitsy.Bencoding
         /// </summary>
         /// <param name="message">The error message.</param>
         /// <param name="inner">The inner exception that is the cause of this exception.</param>
-        public UnsupportedBencodeException(string message, Exception inner)
+        public UnsupportedBencodeException(string? message, Exception? inner)
             : base(message, inner)
         {
         }
@@ -61,7 +61,7 @@ namespace ItsyBitsy.Bencoding
         /// </summary>
         /// <param name="message">The error message.</param>
         /// <param name="position">The position in the stream where the error occurred.</param>
-        public UnsupportedBencodeException(string message, long position)
+        public UnsupportedBencodeException(string? message, long position)
             : base(message)
         {
             Position = position;
