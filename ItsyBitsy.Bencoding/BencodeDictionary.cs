@@ -16,6 +16,7 @@
 // 02110-1301, USA.
 //
 using System;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 namespace ItsyBitsy.Bencoding
@@ -27,6 +28,7 @@ namespace ItsyBitsy.Bencoding
     /// <see cref="BencodeDictionary"/> does not copy the keys from the <see cref="BencodeReader"/>,
     /// so it may have unexpected behavior if the underlying memory is modified.
     /// </remarks>
+    [DebuggerDisplay("Count = {Count}")]
     public readonly struct BencodeDictionary
     {
         private readonly KeyPositionPair[] _entries;

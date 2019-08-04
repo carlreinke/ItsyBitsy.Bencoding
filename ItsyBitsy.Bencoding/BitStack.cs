@@ -21,6 +21,7 @@ using System.Runtime.CompilerServices;
 
 namespace ItsyBitsy.Bencoding
 {
+    [DebuggerDisplay("Count = {Count}")]
     internal struct BitStack
     {
         private int _count;

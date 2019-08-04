@@ -16,6 +16,7 @@
 // 02110-1301, USA.
 //
 using System;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 namespace ItsyBitsy.Bencoding
@@ -23,6 +24,7 @@ namespace ItsyBitsy.Bencoding
     /// <summary>
     /// A list of positions for a <see cref="BencodeReader"/> or <see cref="BencodeSpanReader"/>.
     /// </summary>
+    [DebuggerDisplay("Count = {Count}")]
     public readonly struct BencodeList
     {
         private readonly int[] _entries;

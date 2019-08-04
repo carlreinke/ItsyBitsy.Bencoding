@@ -29,6 +29,7 @@ namespace ItsyBitsy.Bencoding
     /// <see cref="BencodeSpanReader"/>, so it may have unexpected behavior if the underlying memory
     /// is modified.
     /// </remarks>
+    [DebuggerDisplay("Count = {Count}")]
     public readonly ref struct BencodeSpanDictionary
     {
         private readonly ReadOnlySpan<byte> _span;
