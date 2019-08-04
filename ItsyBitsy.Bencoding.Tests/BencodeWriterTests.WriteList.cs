@@ -107,7 +107,7 @@ namespace ItsyBitsy.Bencoding.Tests
         {
             var buffer = new FixedLengthBufferWriter(0);
             var writer = new BencodeWriter(buffer);
-            _ = Assert.Throws<ArgumentException>(() => writer.WriteInteger(1));
+            _ = Assert.Throws<InvalidOperationException>(() => writer.WriteInteger(1));
 
             var ex = Assert.Throws<InvalidOperationException>(() => writer.WriteListHead());
 
@@ -138,7 +138,7 @@ namespace ItsyBitsy.Bencoding.Tests
             var buffer = new FixedLengthBufferWriter(1);
             var writer = new BencodeWriter(buffer);
             writer.WriteListHead();
-            _ = Assert.Throws<ArgumentException>(() => writer.WriteInteger(1));
+            _ = Assert.Throws<InvalidOperationException>(() => writer.WriteInteger(1));
 
             var ex = Assert.Throws<InvalidOperationException>(() => writer.WriteListTail());
 
@@ -246,12 +246,12 @@ namespace ItsyBitsy.Bencoding.Tests
         }
 
         [Fact]
-        public static void WriteListHead_UndersizedBuffer_ThrowsArgumentException()
+        public static void WriteListHead_UndersizedBuffer_ThrowsInvalidOperationException()
         {
             var buffer = new FixedLengthBufferWriter(0);
             var writer = new BencodeWriter(buffer);
 
-            var ex = Assert.Throws<ArgumentException>(() => writer.WriteListHead());
+            var ex = Assert.Throws<InvalidOperationException>(() => writer.WriteListHead());
 
             Assert.Equal("Reached the end of the destination buffer while attempting to write.", ex.Message);
         }
@@ -283,13 +283,13 @@ namespace ItsyBitsy.Bencoding.Tests
         }
 
         [Fact]
-        public static void WriteListTail_UndersizedBuffer_ThrowsArgumentException()
+        public static void WriteListTail_UndersizedBuffer_ThrowsInvalidOperationException()
         {
             var buffer = new FixedLengthBufferWriter(1);
             var writer = new BencodeWriter(buffer);
             writer.WriteListHead();
 
-            var ex = Assert.Throws<ArgumentException>(() => writer.WriteListTail());
+            var ex = Assert.Throws<InvalidOperationException>(() => writer.WriteListTail());
 
             Assert.Equal("Reached the end of the destination buffer while attempting to write.", ex.Message);
         }

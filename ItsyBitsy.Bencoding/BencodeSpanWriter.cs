@@ -155,8 +155,8 @@ namespace ItsyBitsy.Bencoding
         /// <param name="value">The integer to write.</param>
         /// <exception cref="InvalidOperationException">The writer is not in a state that allows an
         ///     integer to be written.</exception>
-        /// <exception cref="ArgumentException">The writer reached the end of the destination buffer
-        ///     while writing the integer.</exception>
+        /// <exception cref="InvalidOperationException">The writer reached the end of the
+        ///     destination buffer while writing the integer.</exception>
         public void WriteInteger(long value)
         {
             _state = GetStateAfterValue(_state);
@@ -191,8 +191,8 @@ namespace ItsyBitsy.Bencoding
         /// <param name="value">The string to write.</param>
         /// <exception cref="InvalidOperationException">The writer is not in a state that allows a
         ///     string to be written.</exception>
-        /// <exception cref="ArgumentException">The writer reached the end of the destination buffer
-        ///     while writing the string.</exception>
+        /// <exception cref="InvalidOperationException">The writer reached the end of the
+        ///     destination buffer while writing the string.</exception>
         public void WriteString(ReadOnlySpan<byte> value)
         {
             _state = GetStateAfterValue(_state);
@@ -205,8 +205,8 @@ namespace ItsyBitsy.Bencoding
         /// </summary>
         /// <exception cref="InvalidOperationException">The writer is not in a state that allows a
         ///     list head to be written.</exception>
-        /// <exception cref="ArgumentException">The writer reached the end of the destination buffer
-        ///     while writing the list head.</exception>
+        /// <exception cref="InvalidOperationException">The writer reached the end of the
+        ///     destination buffer while writing the list head.</exception>
         public void WriteListHead()
         {
             _state = EnterListScope(_state, ref _scopeStack);
@@ -231,8 +231,8 @@ namespace ItsyBitsy.Bencoding
         /// </summary>
         /// <exception cref="InvalidOperationException">The writer is not in a state that allows a
         ///     list tail to be written.</exception>
-        /// <exception cref="ArgumentException">The writer reached the end of the destination buffer
-        ///     while writing the list tail.</exception>
+        /// <exception cref="InvalidOperationException">The writer reached the end of the
+        ///     destination buffer while writing the list tail.</exception>
         public void WriteListTail()
         {
             _state = ExitListScope(_state, ref _scopeStack);
@@ -257,8 +257,8 @@ namespace ItsyBitsy.Bencoding
         /// </summary>
         /// <exception cref="InvalidOperationException">The writer is not in a state that allows a
         ///     dictionary head to be written.</exception>
-        /// <exception cref="ArgumentException">The writer reached the end of the destination buffer
-        ///     while writing the dictionary head.</exception>
+        /// <exception cref="InvalidOperationException">The writer reached the end of the
+        ///     destination buffer while writing the dictionary head.</exception>
         public void WriteDictionaryHead()
         {
             _state = EnterDictionaryScope(_state, ref _scopeStack);
@@ -289,8 +289,8 @@ namespace ItsyBitsy.Bencoding
         /// </summary>
         /// <exception cref="InvalidOperationException">The writer is not in a state that allows a
         ///     dictionary tail to be written.</exception>
-        /// <exception cref="ArgumentException">The writer reached the end of the destination buffer
-        ///     while writing the dictionary tail.</exception>
+        /// <exception cref="InvalidOperationException">The writer reached the end of the
+        ///     destination buffer while writing the dictionary tail.</exception>
         public void WriteDictionaryTail()
         {
             _state = ExitDictionaryScope(_state, ref _scopeStack);
@@ -321,8 +321,8 @@ namespace ItsyBitsy.Bencoding
         /// <param name="key">The key to write.</param>
         /// <exception cref="InvalidOperationException">The writer is not in a state that allows a
         ///     key to be written.</exception>
-        /// <exception cref="ArgumentException">The writer reached the end of the destination buffer
-        ///     while writing the key.</exception>
+        /// <exception cref="InvalidOperationException">The writer reached the end of the
+        ///     destination buffer while writing the key.</exception>
         /// <exception cref="InvalidOperationException">The writer was constructed with validation
         ///     enabled and the key being written is mis-ordered or duplicated.</exception>
         public void WriteKey(ReadOnlySpan<byte> key)
@@ -459,7 +459,7 @@ namespace ItsyBitsy.Bencoding
             }
 
             if (_span.Length < pendingLength)
-                throw new ArgumentException("Reached the end of the destination buffer while attempting to write.");
+                throw new InvalidOperationException("Reached the end of the destination buffer while attempting to write.");
         }
 
         private void FlushAndRequestCapacity(int pendingLength)
@@ -475,7 +475,7 @@ namespace ItsyBitsy.Bencoding
             }
 
             if (_span.Length == 0)
-                throw new ArgumentException("Reached the end of the destination buffer while attempting to write.");
+                throw new InvalidOperationException("Reached the end of the destination buffer while attempting to write.");
         }
 
         private void Flush()

@@ -47,7 +47,7 @@ namespace ItsyBitsy.Bencoding.Tests
             byte[] buffer = new byte[1];
             var writer = new BencodeSpanWriter(buffer);
             writer.WriteDictionaryHead();
-            _ = AssertThrows<ArgumentException>(ref writer, (ref BencodeSpanWriter w) => w.WriteDictionaryTail());
+            _ = AssertThrows<InvalidOperationException>(ref writer, (ref BencodeSpanWriter w) => w.WriteDictionaryTail());
 
             var ex = AssertThrows<InvalidOperationException>(ref writer, (ref BencodeSpanWriter w) => w.WriteKey("a".ToUtf8()));
 
@@ -112,7 +112,7 @@ namespace ItsyBitsy.Bencoding.Tests
 
         [Theory]
         [TupleMemberData(nameof(BencodeTestData.ReadString_ValidData_DataAndValue), MemberType = typeof(BencodeTestData))]
-        public static void WriteKey_UndersizedBuffer_ThrowsArgumentException(string bencodeString, string key)
+        public static void WriteKey_UndersizedBuffer_ThrowsInvalidOperationException(string bencodeString, string key)
         {
             byte[] bencode = $"d{bencodeString}".ToUtf8();
             for (int i = 1; i < bencode.Length - 1; ++i)
@@ -121,7 +121,7 @@ namespace ItsyBitsy.Bencoding.Tests
                 var writer = new BencodeSpanWriter(buffer);
                 writer.WriteDictionaryHead();
 
-                var ex = AssertThrows<ArgumentException>(ref writer, (ref BencodeSpanWriter w) => w.WriteKey(key.ToUtf8()));
+                var ex = AssertThrows<InvalidOperationException>(ref writer, (ref BencodeSpanWriter w) => w.WriteKey(key.ToUtf8()));
 
                 Assert.Equal("Reached the end of the destination buffer while attempting to write.", ex.Message);
             }

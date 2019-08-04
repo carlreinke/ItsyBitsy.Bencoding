@@ -105,7 +105,7 @@ namespace ItsyBitsy.Bencoding.Tests
         {
             byte[] buffer = Array.Empty<byte>();
             var writer = new BencodeSpanWriter(buffer);
-            _ = AssertThrows<ArgumentException>(ref writer, (ref BencodeSpanWriter w) => w.WriteInteger(1));
+            _ = AssertThrows<InvalidOperationException>(ref writer, (ref BencodeSpanWriter w) => w.WriteInteger(1));
 
             var ex = AssertThrows<InvalidOperationException>(ref writer, (ref BencodeSpanWriter w) => w.WriteDictionaryHead());
 
@@ -136,7 +136,7 @@ namespace ItsyBitsy.Bencoding.Tests
             byte[] buffer = new byte[1];
             var writer = new BencodeSpanWriter(buffer);
             writer.WriteDictionaryHead();
-            _ = AssertThrows<ArgumentException>(ref writer, (ref BencodeSpanWriter w) => w.WriteKey("a".ToUtf8()));
+            _ = AssertThrows<InvalidOperationException>(ref writer, (ref BencodeSpanWriter w) => w.WriteKey("a".ToUtf8()));
 
             var ex = AssertThrows<InvalidOperationException>(ref writer, (ref BencodeSpanWriter w) => w.WriteDictionaryTail());
 
@@ -241,12 +241,12 @@ namespace ItsyBitsy.Bencoding.Tests
         }
 
         [Fact]
-        public static void WriteDictionaryHead_UndersizedBuffer_ThrowsArgumentException()
+        public static void WriteDictionaryHead_UndersizedBuffer_ThrowsInvalidOperationException()
         {
             byte[] buffer = new byte[0];
             var writer = new BencodeSpanWriter(buffer);
 
-            var ex = AssertThrows<ArgumentException>(ref writer, (ref BencodeSpanWriter w) => w.WriteDictionaryHead());
+            var ex = AssertThrows<InvalidOperationException>(ref writer, (ref BencodeSpanWriter w) => w.WriteDictionaryHead());
 
             Assert.Equal("Reached the end of the destination buffer while attempting to write.", ex.Message);
         }
@@ -278,13 +278,13 @@ namespace ItsyBitsy.Bencoding.Tests
         }
 
         [Fact]
-        public static void WriteDictionaryTail_UndersizedBuffer_ThrowsArgumentException()
+        public static void WriteDictionaryTail_UndersizedBuffer_ThrowsInvalidOperationException()
         {
             byte[] buffer = new byte[1];
             var writer = new BencodeSpanWriter(buffer);
             writer.WriteDictionaryHead();
 
-            var ex = AssertThrows<ArgumentException>(ref writer, (ref BencodeSpanWriter w) => w.WriteDictionaryTail());
+            var ex = AssertThrows<InvalidOperationException>(ref writer, (ref BencodeSpanWriter w) => w.WriteDictionaryTail());
 
             Assert.Equal("Reached the end of the destination buffer while attempting to write.", ex.Message);
         }
