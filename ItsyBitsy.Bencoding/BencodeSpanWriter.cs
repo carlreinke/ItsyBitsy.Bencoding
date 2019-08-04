@@ -459,7 +459,7 @@ namespace ItsyBitsy.Bencoding
             }
 
             if (_span.Length < pendingLength)
-                throw new ArgumentException($"Reached the end of the destination buffer while attempting to write.");
+                throw new ArgumentException("Reached the end of the destination buffer while attempting to write.");
         }
 
         private void FlushAndRequestCapacity(int pendingLength)
@@ -475,7 +475,7 @@ namespace ItsyBitsy.Bencoding
             }
 
             if (_span.Length == 0)
-                throw new ArgumentException($"Reached the end of the destination buffer while attempting to write.");
+                throw new ArgumentException("Reached the end of the destination buffer while attempting to write.");
         }
 
         private void Flush()
