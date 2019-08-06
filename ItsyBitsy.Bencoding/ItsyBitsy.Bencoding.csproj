@@ -9,7 +9,7 @@
     <Authors>Carl Reinke</Authors>
     <Description>Bencode encoders and decoders.</Description>
     <Copyright>2019 Carl Reinke</Copyright>
-    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+    <PackageLicenseExpression>LGPL-2.1-or-later</PackageLicenseExpression>
     <PackageProjectUrl>https://bitbucket.org/carlreinke/ItsyBitsy.Bencoding</PackageProjectUrl>
     <RepositoryUrl>https://bitbucket.org/carlreinke/ItsyBitsy.Bencoding</RepositoryUrl>
     <RepositoryType>hg</RepositoryType>
