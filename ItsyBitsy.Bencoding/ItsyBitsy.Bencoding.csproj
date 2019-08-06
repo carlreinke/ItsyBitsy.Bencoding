@@ -9,6 +9,9 @@
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <Version>1.0.0-preview</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <InformationalVersion>$(FileVersion)</InformationalVersion>
     <Authors>Carl Reinke</Authors>
     <Description>Bencode encoders and decoders.</Description>
     <Copyright>2019 Carl Reinke</Copyright>

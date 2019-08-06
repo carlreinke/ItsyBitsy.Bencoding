@@ -9,7 +9,7 @@ dotnet_csproj:
   file: '**\*.csproj'
   assembly_version: 1.0.0.0
   file_version: '{version}'
-  informational_version: '{version}-$(APPVEYOR_REPO_COMMIT)'
+  informational_version: '{version}+$(APPVEYOR_REPO_COMMIT)'
 build:
   parallel: true
   verbosity: minimal
