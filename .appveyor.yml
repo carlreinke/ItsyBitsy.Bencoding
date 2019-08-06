@@ -22,5 +22,7 @@ test_script:
 artifacts:
 - path: '**\*.nupkg'
   name: NuGet package
+- path: '**\*.snupkg'
+  name: NuGet symbols package
 - path: ItsyBitsy.Bencoding.Docs\bin\Docs\
   name: docs
