@@ -2,31 +2,33 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>7.3</LangVersion>
+    <Features>strict</Features>
 
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IncludeSymbols>true</IncludeSymbols>
     <EmbedAllSources>true</EmbedAllSources>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-    <Version>1.0.0-preview</Version>
-    <AssemblyVersion>1.0.0.0</AssemblyVersion>
-    <FileVersion>1.0.0.0</FileVersion>
-    <InformationalVersion>$(FileVersion)</InformationalVersion>
-    <Authors>Carl Reinke</Authors>
-    <Description>Bencode encoders and decoders.</Description>
-    <Copyright>2019 Carl Reinke</Copyright>
     <PackageLicenseExpression>LGPL-2.1-or-later</PackageLicenseExpression>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <PackageProjectUrl>https://bitbucket.org/carlreinke/ItsyBitsy.Bencoding</PackageProjectUrl>
     <RepositoryUrl>https://bitbucket.org/carlreinke/ItsyBitsy.Bencoding</RepositoryUrl>
     <RepositoryType>mercurial</RepositoryType>
     <PackageTags>bencode;bencoding</PackageTags>
+
+    <Version>1.0.0-preview</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <InformationalVersion>$(FileVersion)</InformationalVersion>
+
+    <Authors>Carl Reinke</Authors>
+    <Description>Bencode encoders and decoders.</Description>
+    <Copyright>2019 Carl Reinke</Copyright>
     <NeutralLanguage>en-US</NeutralLanguage>
 
-    <LangVersion>7.3</LangVersion>
-    <Features>strict</Features>
+    <CodeAnalysisRuleSet>ItsyBitsy.Bencoding.ruleset</CodeAnalysisRuleSet>
 
     <DocumentationFile>bin\$(Configuration)\netstandard2.0\ItsyBitsy.Bencoding.xml</DocumentationFile>
-    <CodeAnalysisRuleSet>ItsyBitsy.Bencoding.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
 
   <ItemGroup>
