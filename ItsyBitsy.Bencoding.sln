@@ -12,7 +12,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ItsyBitsy.Bencoding", "Itsy
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ItsyBitsy.Bencoding.Tests", "ItsyBitsy.Bencoding.Tests\ItsyBitsy.Bencoding.Tests.csproj", "{F3646026-E00A-4F51-B8D1-6C9228B40CAD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ItsyBitsy.Bencoding.Docs", "ItsyBitsy.Bencoding.Docs\ItsyBitsy.Bencoding.Docs.csproj", "{2F3D68C4-033C-4FB9-8D6B-BF371189E68B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ItsyBitsy.Bencoding.Docs", "ItsyBitsy.Bencoding.Docs\ItsyBitsy.Bencoding.Docs.csproj", "{2F3D68C4-033C-4FB9-8D6B-BF371189E68B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

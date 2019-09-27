@@ -9,6 +9,9 @@
     <Features>strict</Features>
     <Nullable>enable</Nullable>
 
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\ItsyBitsy.Bencoding.snk</AssemblyOriginatorKeyFile>
+
     <CodeAnalysisRuleSet>ItsyBitsy.Bencoding.Tests.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
 

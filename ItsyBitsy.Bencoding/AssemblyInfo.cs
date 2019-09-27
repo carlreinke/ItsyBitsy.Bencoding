@@ -19,4 +19,4 @@ using System;
 using System.Runtime.CompilerServices;
 
 [assembly: CLSCompliant(true)]
-[assembly: InternalsVisibleTo("ItsyBitsy.Bencoding.Tests")]
+[assembly: InternalsVisibleTo("ItsyBitsy.Bencoding.Tests, PublicKey=00240000048000009400000006020000002400005253413100040000010001003db97b61658fc679b031973d6b370e9bd85a1bbbd83660fa626f544e1724f4417828b53fe2daf92f94d5a52767929741c71fabc99e924d4ef135fba09a0320df0764ac7105daa8d89635dd52c4cc194917ef898398c6e17343258d946a5e55cf7264e82e73e806c5987aee0b9d3bef21836d74cb5dd548b8615f6403909503f1")]
