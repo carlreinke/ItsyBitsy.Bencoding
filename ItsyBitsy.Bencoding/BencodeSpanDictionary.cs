@@ -106,7 +106,7 @@ namespace ItsyBitsy.Bencoding
             return ~left;
         }
 
-        private struct KeyRange
+        private readonly struct KeyRange
         {
             public readonly int Index;
 
@@ -138,7 +138,7 @@ namespace ItsyBitsy.Bencoding
             /// <summary>
             /// Gets the element at the current position of the enumerator.
             /// </summary>
-            public KeyPositionPair Current
+            public readonly KeyPositionPair Current
             {
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 get
@@ -173,7 +173,7 @@ namespace ItsyBitsy.Bencoding
         /// <summary>
         /// Represents an element in a <see cref="BencodeSpanDictionary"/>.
         /// </summary>
-        public ref struct KeyPositionPair
+        public readonly ref struct KeyPositionPair
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal KeyPositionPair(ReadOnlySpan<byte> key, int position)
@@ -208,9 +208,9 @@ namespace ItsyBitsy.Bencoding
                 _count = 0;
             }
 
-            internal int Capacity => _keyRanges?.Length ?? 0;
+            internal readonly int Capacity => _keyRanges?.Length ?? 0;
 
-            internal BencodeSpanDictionary ToDictionary()
+            internal readonly BencodeSpanDictionary ToDictionary()
             {
                 Debug.Assert(_keyRanges != null || _count == 0);
                 return new BencodeSpanDictionary(_span, _keyRanges!, _count);

@@ -88,7 +88,7 @@ namespace ItsyBitsy.Bencoding
             /// <summary>
             /// Gets the element at the current position of the enumerator.
             /// </summary>
-            public int Current
+            public readonly int Current
             {
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 get
@@ -123,7 +123,7 @@ namespace ItsyBitsy.Bencoding
 
             private int _count;
 
-            internal int Capacity => _entries?.Length ?? 0;
+            internal readonly int Capacity => _entries?.Length ?? 0;
 
             internal void Add(int position)
             {
@@ -133,7 +133,7 @@ namespace ItsyBitsy.Bencoding
                 _count += 1;
             }
 
-            internal BencodeList ToList() => new BencodeList(_entries, _count);
+            internal readonly BencodeList ToList() => new BencodeList(_entries, _count);
 
             private void EnsureCapacity()
             {

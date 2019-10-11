@@ -81,7 +81,7 @@ namespace ItsyBitsy.Bencoding
         /// </remarks>
         public int Position
         {
-            get => _index;
+            readonly get => _index;
             set
             {
                 if (value < 0)

@@ -112,7 +112,7 @@ namespace ItsyBitsy.Bencoding
         /// destination then <see cref="BufferedLength"/> is the number of bytes written to the
         /// <see cref="Span{T}"/>.
         /// </remarks>
-        public int BufferedLength => _bufferedLength;
+        public readonly int BufferedLength => _bufferedLength;
 
         /// <summary>
         /// Advances the underlying <see cref="IBufferWriter{T}"/>.
@@ -566,9 +566,9 @@ namespace ItsyBitsy.Bencoding
 
             private int _length;
 
-            public bool HasValue => _array != null;
+            public readonly bool HasValue => _array != null;
 
-            public ReadOnlySpan<byte> Span => _array.AsSpan(0, _length);
+            public readonly ReadOnlySpan<byte> Span => _array.AsSpan(0, _length);
 
             public void CopyFrom(ReadOnlySpan<byte> key)
             {

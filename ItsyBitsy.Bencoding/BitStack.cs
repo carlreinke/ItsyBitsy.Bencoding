@@ -30,7 +30,7 @@ namespace ItsyBitsy.Bencoding
 
         private ulong[] _bitsArray;
 
-        public int Count => _count;
+        public readonly int Count => _count;
 
         public void PushFalse()
         {

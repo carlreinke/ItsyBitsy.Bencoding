@@ -114,7 +114,7 @@ namespace ItsyBitsy.Bencoding
             /// <summary>
             /// Gets the element at the current position of the enumerator.
             /// </summary>
-            public KeyPositionPair Current
+            public readonly KeyPositionPair Current
             {
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 get
@@ -172,9 +172,9 @@ namespace ItsyBitsy.Bencoding
 
             private int _count;
 
-            internal int Capacity => _entries?.Length ?? 0;
+            internal readonly int Capacity => _entries?.Length ?? 0;
 
-            internal BencodeDictionary ToDictionary() => new BencodeDictionary(_entries, _count);
+            internal readonly BencodeDictionary ToDictionary() => new BencodeDictionary(_entries, _count);
 
             internal bool TryAdd(ReadOnlyMemory<byte> key, int position)
             {
