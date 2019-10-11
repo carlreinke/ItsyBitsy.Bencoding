@@ -340,17 +340,13 @@ namespace ItsyBitsy.Bencoding
 
         internal static State GetStateAfterValue(State state)
         {
-            switch (state)
+            return state switch
             {
-                case State.Initial:
-                    return State.Final;
-                case State.DictionaryValue:
-                    return State.DictionaryKey;
-                case State.ListItem:
-                    return State.ListItem;
-                default:
-                    throw new InvalidOperationException("The writer is not in a state that allows a value to be written.");
-            }
+                State.Initial => State.Final,
+                State.DictionaryValue => State.DictionaryKey,
+                State.ListItem => State.ListItem,
+                _ => throw new InvalidOperationException("The writer is not in a state that allows a value to be written."),
+            };
         }
 
         internal static State EnterListScope(State state, ref BitStack scopeStack)
@@ -374,14 +370,12 @@ namespace ItsyBitsy.Bencoding
 
         internal static State ExitListScope(State state, ref BitStack scopeStack)
         {
-            switch (state)
+            return state switch
             {
-                case State.ListItem:
-                    return scopeStack.Count == 0 ? State.Final :
-                           scopeStack.Pop() ? State.DictionaryKey : State.ListItem;
-                default:
-                    throw new InvalidOperationException("The writer is not in a state that allows a list tail to be written.");
-            }
+                State.ListItem => scopeStack.Count == 0 ? State.Final :
+                                  scopeStack.Pop() ? State.DictionaryKey : State.ListItem,
+                _ => throw new InvalidOperationException("The writer is not in a state that allows a list tail to be written."),
+            };
         }
 
         internal static State EnterDictionaryScope(State state, ref BitStack scopeStack)
@@ -405,25 +399,21 @@ namespace ItsyBitsy.Bencoding
 
         internal static State ExitDictionaryScope(State state, ref BitStack scopeStack)
         {
-            switch (state)
+            return state switch
             {
-                case State.DictionaryKey:
-                    return scopeStack.Count == 0 ? State.Final :
-                           scopeStack.Pop() ? State.DictionaryKey : State.ListItem;
-                default:
-                    throw new InvalidOperationException("The writer is not in a state that allows a dictionary tail to be written.");
-            }
+                State.DictionaryKey => scopeStack.Count == 0 ? State.Final :
+                                       scopeStack.Pop() ? State.DictionaryKey : State.ListItem,
+                _ => throw new InvalidOperationException("The writer is not in a state that allows a dictionary tail to be written."),
+            };
         }
 
         internal static State GetStateAfterKey(State state)
         {
-            switch (state)
+            return state switch
             {
-                case State.DictionaryKey:
-                    return State.DictionaryValue;
-                default:
-                    throw new InvalidOperationException("The writer is not in a state that allows a key to be written.");
-            }
+                State.DictionaryKey => State.DictionaryValue,
+                _ => throw new InvalidOperationException("The writer is not in a state that allows a key to be written."),
+            };
         }
 
         internal static bool IsLess(ReadOnlySpan<byte> x, ReadOnlySpan<byte> y)

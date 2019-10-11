@@ -668,17 +668,13 @@ namespace ItsyBitsy.Bencoding
 
         internal static State GetStateAfterValue(State state)
         {
-            switch (state)
+            return state switch
             {
-                case State.Initial:
-                    return State.Final;
-                case State.ListItem:
-                    return State.ListItem;
-                case State.DictionaryValue:
-                    return State.DictionaryKey;
-                default:
-                    throw new InvalidOperationException("The reader is not in a state that allows a value to be read.");
-            }
+                State.Initial => State.Final,
+                State.ListItem => State.ListItem,
+                State.DictionaryValue => State.DictionaryKey,
+                _ => throw new InvalidOperationException("The reader is not in a state that allows a value to be read."),
+            };
         }
 
         internal static State EnterListScope(State state, ref BitStack scopeStack)
@@ -702,14 +698,12 @@ namespace ItsyBitsy.Bencoding
 
         internal static State ExitListScope(State state, ref BitStack scopeStack)
         {
-            switch (state)
+            return state switch
             {
-                case State.ListItem:
-                    return scopeStack.Count == 0 ? State.Final :
-                           scopeStack.Pop() ? State.DictionaryKey : State.ListItem;
-                default:
-                    throw new InvalidOperationException("The reader is not in a state that allows a list tail to be read.");
-            }
+                State.ListItem => scopeStack.Count == 0 ? State.Final :
+                                  scopeStack.Pop() ? State.DictionaryKey : State.ListItem,
+                _ => throw new InvalidOperationException("The reader is not in a state that allows a list tail to be read."),
+            };
         }
 
         internal static State EnterDictionaryScope(State state, ref BitStack scopeStack)
@@ -733,25 +727,21 @@ namespace ItsyBitsy.Bencoding
 
         internal static State ExitDictionaryScope(State state, ref BitStack scopeStack)
         {
-            switch (state)
+            return state switch
             {
-                case State.DictionaryKey:
-                    return scopeStack.Count == 0 ? State.Final :
-                           scopeStack.Pop() ? State.DictionaryKey : State.ListItem;
-                default:
-                    throw new InvalidOperationException("The reader is not in a state that allows a dictionary tail to be read.");
-            }
+                State.DictionaryKey => scopeStack.Count == 0 ? State.Final :
+                                       scopeStack.Pop() ? State.DictionaryKey : State.ListItem,
+                _ => throw new InvalidOperationException("The reader is not in a state that allows a dictionary tail to be read."),
+            };
         }
 
         internal static State GetStateAfterKey(State state)
         {
-            switch (state)
+            return state switch
             {
-                case State.DictionaryKey:
-                    return State.DictionaryValue;
-                default:
-                    throw new InvalidOperationException("The reader is not in a state that allows a key to be read.");
-            }
+                State.DictionaryKey => State.DictionaryValue,
+                _ => throw new InvalidOperationException("The reader is not in a state that allows a key to be read."),
+            };
         }
 
         internal static void SkipValueInternal(ReadOnlySpan<byte> span, ref int index, ref int stringHeadLength, ref int stringLength)
