@@ -657,7 +657,7 @@ namespace ItsyBitsy.Bencoding
                     return BencodeTokenType.None;
             }
 
-            Exception MismatchError(string expected, int unexpected, int position)
+            static Exception MismatchError(string expected, int unexpected, int position)
             {
                 string message = unexpected == -1 ? $"Expected {expected} but reached the end of the source buffer while reading the token type."
                         : IsPrintable(unexpected) ? $"Expected {expected} but found '{(char)unexpected}' while reading the token type."
@@ -964,7 +964,7 @@ namespace ItsyBitsy.Bencoding
 
             return value;
 
-            Exception MismatchError(string expected, int unexpected, int position)
+            static Exception MismatchError(string expected, int unexpected, int position)
             {
                 string message = unexpected == -1 ? $"Expected {expected} but reached the end of the source buffer while reading an integer."
                         : IsPrintable(unexpected) ? $"Expected {expected} but found '{(char)unexpected}' while reading an integer."
@@ -1017,7 +1017,7 @@ namespace ItsyBitsy.Bencoding
             stringHeadLength = integerSpan.Length + 1;
             stringLength = length;
 
-            Exception MismatchError(string expected, int unexpected, int position)
+            static Exception MismatchError(string expected, int unexpected, int position)
             {
                 string message = unexpected == -1 ? $"Expected {expected} but reached the end of the source buffer while reading a string."
                         : IsPrintable(unexpected) ? $"Expected {expected} but found '{(char)unexpected}' while reading a string."
@@ -1054,7 +1054,7 @@ namespace ItsyBitsy.Bencoding
             if (b != 'l')
                 throw MismatchError("'l'", b, index);
 
-            Exception MismatchError(string expected, int unexpected, int position)
+            static Exception MismatchError(string expected, int unexpected, int position)
             {
                 string message = unexpected == -1 ? $"Expected {expected} but reached the end of the source buffer while reading a list head."
                         : IsPrintable(unexpected) ? $"Expected {expected} but found '{(char)unexpected}' while reading a list head."
@@ -1070,7 +1070,7 @@ namespace ItsyBitsy.Bencoding
             if (b != 'e')
                 throw MismatchError("'e'", b, index);
 
-            Exception MismatchError(string expected, int unexpected, int position)
+            static Exception MismatchError(string expected, int unexpected, int position)
             {
                 string message = unexpected == -1 ? $"Expected {expected} but reached the end of the source buffer while reading a list tail."
                         : IsPrintable(unexpected) ? $"Expected {expected} but found '{(char)unexpected}' while reading a list tail."
@@ -1086,7 +1086,7 @@ namespace ItsyBitsy.Bencoding
             if (b != 'd')
                 throw MismatchError("'d'", b, index);
 
-            Exception MismatchError(string expected, int unexpected, int position)
+            static Exception MismatchError(string expected, int unexpected, int position)
             {
                 string message = unexpected == -1 ? $"Expected {expected} but reached the end of the source buffer while reading a dictionary head."
                         : IsPrintable(unexpected) ? $"Expected {expected} but found '{(char)unexpected}' while reading a dictionary head."
@@ -1102,7 +1102,7 @@ namespace ItsyBitsy.Bencoding
             if (b != 'e')
                 throw MismatchError("'e'", b, index);
 
-            Exception MismatchError(string expected, int unexpected, int position)
+            static Exception MismatchError(string expected, int unexpected, int position)
             {
                 string message = unexpected == -1 ? $"Expected {expected} but reached the end of the source buffer while reading a dictionary tail."
                         : IsPrintable(unexpected) ? $"Expected {expected} but found '{(char)unexpected}' while reading a dictionary tail."
