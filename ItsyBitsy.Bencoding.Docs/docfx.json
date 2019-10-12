@@ -10,7 +10,10 @@
         }
       ],
       "dest": "obj/docfx/api",
-      "shouldSkipMarkup": true
+      "shouldSkipMarkup": true,
+      "properties": {
+        "TargetFramework": "netstandard2.0"
+      }
     }
   ],
   "build": {
