@@ -11,6 +11,10 @@
     </PackageReference>
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\ItsyBitsy.Bencoding\ItsyBitsy.Bencoding.csproj" />
+  </ItemGroup>
+
   <PropertyGroup>
     <LogFile>obj/docfx/log.txt</LogFile>
     <LogLevel>Warning</LogLevel>
