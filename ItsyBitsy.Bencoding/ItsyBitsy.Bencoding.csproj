@@ -18,9 +18,9 @@
     <RepositoryType>mercurial</RepositoryType>
     <PackageTags>bencode;bencoding</PackageTags>
 
-    <Version>1.0.0</Version>
+    <Version>1.0.1</Version>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
-    <FileVersion>1.0.0.0</FileVersion>
+    <FileVersion>1.0.1.0</FileVersion>
     <InformationalVersion>$(FileVersion)</InformationalVersion>
 
     <Authors>Carl Reinke</Authors>
