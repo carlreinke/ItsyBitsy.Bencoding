@@ -13,9 +13,9 @@
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <PackageLicenseExpression>LGPL-2.1-or-later</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-    <PackageProjectUrl>https://bitbucket.org/carlreinke/ItsyBitsy.Bencoding</PackageProjectUrl>
-    <RepositoryUrl>https://bitbucket.org/carlreinke/ItsyBitsy.Bencoding</RepositoryUrl>
-    <RepositoryType>mercurial</RepositoryType>
+    <PackageProjectUrl>https://github.com/carlreinke/ItsyBitsy.Bencoding</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/carlreinke/ItsyBitsy.Bencoding</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
     <PackageTags>bencode;bencoding</PackageTags>
 
     <Version>1.0.1</Version>
