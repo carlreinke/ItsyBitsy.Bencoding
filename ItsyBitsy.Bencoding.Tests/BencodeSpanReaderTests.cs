@@ -124,10 +124,10 @@ namespace ItsyBitsy.Bencoding.Tests
                     case BTT.None:
                         break;
                     case BTT.Integer:
-                        reader.ReadInteger();
+                        _ = reader.ReadInteger();
                         break;
                     case BTT.String:
-                        reader.ReadString();
+                        _ = reader.ReadString();
                         break;
                     case BTT.ListHead:
                         reader.ReadListHead();
@@ -142,7 +142,7 @@ namespace ItsyBitsy.Bencoding.Tests
                         reader.ReadDictionaryTail();
                         break;
                     case BTT.Key:
-                        reader.ReadKey();
+                        _ = reader.ReadKey();
                         break;
                 }
             }

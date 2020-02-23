@@ -43,7 +43,7 @@ namespace ItsyBitsy.Bencoding.Tests
         public static void Count_PushedAndPopped_IsPushedCountMinusPoppedCount(int pushCount, int popCount)
         {
             BitStack bitStack = default;
-            PushRandomBits(ref bitStack, pushCount);
+            _ = PushRandomBits(ref bitStack, pushCount);
             for (int i = 0; i < popCount; ++i)
                 _ = bitStack.Pop();
 
@@ -228,7 +228,7 @@ namespace ItsyBitsy.Bencoding.Tests
         public static void Clear_PushedRandomFalseAndTrue_CountIsZero(int pushCount, int popCount)
         {
             BitStack bitStack = default;
-            PushRandomBits(ref bitStack, pushCount);
+            _ = PushRandomBits(ref bitStack, pushCount);
             for (int i = 0; i < popCount; ++i)
                 _ = bitStack.Pop();
 

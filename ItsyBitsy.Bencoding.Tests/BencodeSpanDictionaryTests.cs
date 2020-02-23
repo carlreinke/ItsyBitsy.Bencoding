@@ -111,7 +111,7 @@ namespace ItsyBitsy.Bencoding.Tests
                 Assert.True(builder.TryAdd(keyIndex, Encoding.UTF8.GetByteCount(key)));
             var dictionary = builder.ToDictionary();
 
-            foreach (var (_, key, expectedPosition) in elements)
+            foreach (var (_, key, _) in elements)
                 Assert.True(dictionary.TryGetPosition(key.ToUtf8(), out _));
 
             int resultPosition;

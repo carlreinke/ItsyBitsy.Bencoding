@@ -31,8 +31,6 @@
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\ItsyBitsy.Bencoding.snk</AssemblyOriginatorKeyFile>
 
-    <CodeAnalysisRuleSet>ItsyBitsy.Bencoding.ruleset</CodeAnalysisRuleSet>
-
     <DocumentationFile>bin\$(Configuration)\netstandard2.0\ItsyBitsy.Bencoding.xml</DocumentationFile>
   </PropertyGroup>
 

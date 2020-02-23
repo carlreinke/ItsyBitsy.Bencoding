@@ -11,8 +11,6 @@
 
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\ItsyBitsy.Bencoding.snk</AssemblyOriginatorKeyFile>
-
-    <CodeAnalysisRuleSet>ItsyBitsy.Bencoding.Tests.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
 
   <ItemGroup>
