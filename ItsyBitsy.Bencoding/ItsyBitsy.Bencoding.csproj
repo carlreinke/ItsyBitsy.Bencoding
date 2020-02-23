@@ -31,7 +31,7 @@
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\ItsyBitsy.Bencoding.snk</AssemblyOriginatorKeyFile>
 
-    <DocumentationFile>bin\$(Configuration)\netstandard2.0\ItsyBitsy.Bencoding.xml</DocumentationFile>
+    <DocumentationFile>bin\$(Configuration)\ItsyBitsy.Bencoding.xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
