@@ -15,6 +15,7 @@
 // if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 // 02110-1301, USA.
 //
+using ItsyBitsy.Xunit;
 using System;
 using System.Buffers;
 using Xunit;
@@ -207,11 +208,11 @@ namespace ItsyBitsy.Bencoding.Tests
                 if (ex.GetType() == typeof(T))
                     return (T)ex;
 
-                throw new Xunit.Sdk.ThrowsException(typeof(T), ex);
+                throw new global::Xunit.Sdk.ThrowsException(typeof(T), ex);
             }
 #pragma warning restore CA1031 // Do not catch general exception types
 
-            throw new Xunit.Sdk.ThrowsException(typeof(T));
+            throw new global::Xunit.Sdk.ThrowsException(typeof(T));
         }
 
         private delegate void BencodeSpanReaderWriterAction(ref BencodeSpanReader reader, ref BencodeSpanWriter writer);
@@ -233,11 +234,11 @@ namespace ItsyBitsy.Bencoding.Tests
                 if (ex.GetType() == typeof(T))
                     return (T)ex;
 
-                throw new Xunit.Sdk.ThrowsException(typeof(T), ex);
+                throw new global::Xunit.Sdk.ThrowsException(typeof(T), ex);
             }
 #pragma warning restore CA1031 // Do not catch general exception types
 
-            throw new Xunit.Sdk.ThrowsException(typeof(T));
+            throw new global::Xunit.Sdk.ThrowsException(typeof(T));
         }
 
         internal static void Copy(ref BencodeSpanReader reader, ref BencodeSpanWriter writer, ReadOnlySpan<BTT> tokenTypes)

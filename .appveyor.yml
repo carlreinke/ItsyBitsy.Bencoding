@@ -16,7 +16,7 @@ build:
   parallel: true
   verbosity: minimal
 before_build:
-- pwsh: nuget restore -Verbosity quiet
+- pwsh: dotnet restore
 test_script:
 - pwsh: dotnet test -c $Env:CONFIGURATION /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput=bin\$Env:CONFIGURATION\coverage.xml
 after_test:
