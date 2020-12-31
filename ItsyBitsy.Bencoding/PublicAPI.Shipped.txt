@@ -1,22 +1,28 @@
-﻿ItsyBitsy.Bencoding.BencodeDictionary
+﻿#nullable enable
+ItsyBitsy.Bencoding.BencodeDictionary
+ItsyBitsy.Bencoding.BencodeDictionary.BencodeDictionary() -> void
 ItsyBitsy.Bencoding.BencodeDictionary.Count.get -> int
 ItsyBitsy.Bencoding.BencodeDictionary.Enumerator
 ItsyBitsy.Bencoding.BencodeDictionary.Enumerator.Current.get -> ItsyBitsy.Bencoding.BencodeDictionary.KeyPositionPair
+ItsyBitsy.Bencoding.BencodeDictionary.Enumerator.Enumerator() -> void
 ItsyBitsy.Bencoding.BencodeDictionary.Enumerator.MoveNext() -> bool
 ItsyBitsy.Bencoding.BencodeDictionary.GetEnumerator() -> ItsyBitsy.Bencoding.BencodeDictionary.Enumerator
 ItsyBitsy.Bencoding.BencodeDictionary.KeyPositionPair
 ItsyBitsy.Bencoding.BencodeDictionary.KeyPositionPair.Key.get -> System.ReadOnlyMemory<byte>
+ItsyBitsy.Bencoding.BencodeDictionary.KeyPositionPair.KeyPositionPair() -> void
 ItsyBitsy.Bencoding.BencodeDictionary.KeyPositionPair.Position.get -> int
 ItsyBitsy.Bencoding.BencodeDictionary.TryGetPosition(System.ReadOnlySpan<byte> key, out int position) -> bool
 ItsyBitsy.Bencoding.BencodeException
 ItsyBitsy.Bencoding.BencodeException.BencodeException() -> void
-ItsyBitsy.Bencoding.BencodeException.BencodeException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context) -> void
-ItsyBitsy.Bencoding.BencodeException.BencodeException(string message) -> void
-ItsyBitsy.Bencoding.BencodeException.BencodeException(string message, System.Exception inner) -> void
+ItsyBitsy.Bencoding.BencodeException.BencodeException(System.Runtime.Serialization.SerializationInfo! info, System.Runtime.Serialization.StreamingContext context) -> void
+ItsyBitsy.Bencoding.BencodeException.BencodeException(string? message) -> void
+ItsyBitsy.Bencoding.BencodeException.BencodeException(string? message, System.Exception? inner) -> void
 ItsyBitsy.Bencoding.BencodeList
+ItsyBitsy.Bencoding.BencodeList.BencodeList() -> void
 ItsyBitsy.Bencoding.BencodeList.Count.get -> int
 ItsyBitsy.Bencoding.BencodeList.Enumerator
 ItsyBitsy.Bencoding.BencodeList.Enumerator.Current.get -> int
+ItsyBitsy.Bencoding.BencodeList.Enumerator.Enumerator() -> void
 ItsyBitsy.Bencoding.BencodeList.Enumerator.MoveNext() -> bool
 ItsyBitsy.Bencoding.BencodeList.GetEnumerator() -> ItsyBitsy.Bencoding.BencodeList.Enumerator
 ItsyBitsy.Bencoding.BencodeList.this[int index].get -> int
@@ -37,21 +43,25 @@ ItsyBitsy.Bencoding.BencodeReader.ReadListTail() -> void
 ItsyBitsy.Bencoding.BencodeReader.ReadString() -> System.ReadOnlyMemory<byte>
 ItsyBitsy.Bencoding.BencodeReader.ReadStringLength() -> int
 ItsyBitsy.Bencoding.BencodeReader.ReadTokenType() -> ItsyBitsy.Bencoding.BencodeTokenType
-ItsyBitsy.Bencoding.BencodeReader.ReadValueTo(ItsyBitsy.Bencoding.BencodeWriter writer) -> void
+ItsyBitsy.Bencoding.BencodeReader.ReadValueTo(ItsyBitsy.Bencoding.BencodeWriter! writer) -> void
 ItsyBitsy.Bencoding.BencodeReader.ReadValueTo(ref ItsyBitsy.Bencoding.BencodeSpanWriter writer) -> void
 ItsyBitsy.Bencoding.BencodeReader.SkipKey() -> void
 ItsyBitsy.Bencoding.BencodeReader.SkipValue() -> void
 ItsyBitsy.Bencoding.BencodeSpanDictionary
+ItsyBitsy.Bencoding.BencodeSpanDictionary.BencodeSpanDictionary() -> void
 ItsyBitsy.Bencoding.BencodeSpanDictionary.Count.get -> int
 ItsyBitsy.Bencoding.BencodeSpanDictionary.Enumerator
 ItsyBitsy.Bencoding.BencodeSpanDictionary.Enumerator.Current.get -> ItsyBitsy.Bencoding.BencodeSpanDictionary.KeyPositionPair
+ItsyBitsy.Bencoding.BencodeSpanDictionary.Enumerator.Enumerator() -> void
 ItsyBitsy.Bencoding.BencodeSpanDictionary.Enumerator.MoveNext() -> bool
 ItsyBitsy.Bencoding.BencodeSpanDictionary.GetEnumerator() -> ItsyBitsy.Bencoding.BencodeSpanDictionary.Enumerator
 ItsyBitsy.Bencoding.BencodeSpanDictionary.KeyPositionPair
 ItsyBitsy.Bencoding.BencodeSpanDictionary.KeyPositionPair.Key.get -> System.ReadOnlySpan<byte>
+ItsyBitsy.Bencoding.BencodeSpanDictionary.KeyPositionPair.KeyPositionPair() -> void
 ItsyBitsy.Bencoding.BencodeSpanDictionary.KeyPositionPair.Position.get -> int
 ItsyBitsy.Bencoding.BencodeSpanDictionary.TryGetPosition(System.ReadOnlySpan<byte> key, out int position) -> bool
 ItsyBitsy.Bencoding.BencodeSpanReader
+ItsyBitsy.Bencoding.BencodeSpanReader.BencodeSpanReader() -> void
 ItsyBitsy.Bencoding.BencodeSpanReader.BencodeSpanReader(System.ReadOnlySpan<byte> source) -> void
 ItsyBitsy.Bencoding.BencodeSpanReader.Dispose() -> void
 ItsyBitsy.Bencoding.BencodeSpanReader.Position.get -> int
@@ -68,12 +78,13 @@ ItsyBitsy.Bencoding.BencodeSpanReader.ReadListTail() -> void
 ItsyBitsy.Bencoding.BencodeSpanReader.ReadString() -> System.ReadOnlySpan<byte>
 ItsyBitsy.Bencoding.BencodeSpanReader.ReadStringLength() -> int
 ItsyBitsy.Bencoding.BencodeSpanReader.ReadTokenType() -> ItsyBitsy.Bencoding.BencodeTokenType
-ItsyBitsy.Bencoding.BencodeSpanReader.ReadValueTo(ItsyBitsy.Bencoding.BencodeWriter writer) -> void
+ItsyBitsy.Bencoding.BencodeSpanReader.ReadValueTo(ItsyBitsy.Bencoding.BencodeWriter! writer) -> void
 ItsyBitsy.Bencoding.BencodeSpanReader.ReadValueTo(ref ItsyBitsy.Bencoding.BencodeSpanWriter writer) -> void
 ItsyBitsy.Bencoding.BencodeSpanReader.SkipKey() -> void
 ItsyBitsy.Bencoding.BencodeSpanReader.SkipValue() -> void
 ItsyBitsy.Bencoding.BencodeSpanWriter
-ItsyBitsy.Bencoding.BencodeSpanWriter.BencodeSpanWriter(System.Buffers.IBufferWriter<byte> destination, bool skipValidation = false) -> void
+ItsyBitsy.Bencoding.BencodeSpanWriter.BencodeSpanWriter() -> void
+ItsyBitsy.Bencoding.BencodeSpanWriter.BencodeSpanWriter(System.Buffers.IBufferWriter<byte>! destination, bool skipValidation = false) -> void
 ItsyBitsy.Bencoding.BencodeSpanWriter.BencodeSpanWriter(System.Span<byte> destination, bool skipValidation = false) -> void
 ItsyBitsy.Bencoding.BencodeSpanWriter.BufferedLength.get -> int
 ItsyBitsy.Bencoding.BencodeSpanWriter.Dispose() -> void
@@ -88,11 +99,11 @@ ItsyBitsy.Bencoding.BencodeSpanWriter.WriteString(System.ReadOnlySpan<byte> valu
 ItsyBitsy.Bencoding.BencodeStringComparer
 ItsyBitsy.Bencoding.BencodeStringComparer.BencodeStringComparer() -> void
 ItsyBitsy.Bencoding.BencodeStringComparer.Compare(System.ReadOnlyMemory<byte> x, System.ReadOnlyMemory<byte> y) -> int
-ItsyBitsy.Bencoding.BencodeStringComparer.Compare(byte[] x, byte[] y) -> int
+ItsyBitsy.Bencoding.BencodeStringComparer.Compare(byte[]? x, byte[]? y) -> int
 ItsyBitsy.Bencoding.BencodeStringComparer.Equals(System.ReadOnlyMemory<byte> x, System.ReadOnlyMemory<byte> y) -> bool
-ItsyBitsy.Bencoding.BencodeStringComparer.Equals(byte[] x, byte[] y) -> bool
+ItsyBitsy.Bencoding.BencodeStringComparer.Equals(byte[]? x, byte[]? y) -> bool
 ItsyBitsy.Bencoding.BencodeStringComparer.GetHashCode(System.ReadOnlyMemory<byte> obj) -> int
-ItsyBitsy.Bencoding.BencodeStringComparer.GetHashCode(byte[] obj) -> int
+ItsyBitsy.Bencoding.BencodeStringComparer.GetHashCode(byte[]? obj) -> int
 ItsyBitsy.Bencoding.BencodeTokenType
 ItsyBitsy.Bencoding.BencodeTokenType.DictionaryHead = 5 -> ItsyBitsy.Bencoding.BencodeTokenType
 ItsyBitsy.Bencoding.BencodeTokenType.DictionaryTail = 6 -> ItsyBitsy.Bencoding.BencodeTokenType
@@ -103,7 +114,7 @@ ItsyBitsy.Bencoding.BencodeTokenType.ListTail = 4 -> ItsyBitsy.Bencoding.Bencode
 ItsyBitsy.Bencoding.BencodeTokenType.None = 0 -> ItsyBitsy.Bencoding.BencodeTokenType
 ItsyBitsy.Bencoding.BencodeTokenType.String = 2 -> ItsyBitsy.Bencoding.BencodeTokenType
 ItsyBitsy.Bencoding.BencodeWriter
-ItsyBitsy.Bencoding.BencodeWriter.BencodeWriter(System.Buffers.IBufferWriter<byte> destination, bool skipValidation = false) -> void
+ItsyBitsy.Bencoding.BencodeWriter.BencodeWriter(System.Buffers.IBufferWriter<byte>! destination, bool skipValidation = false) -> void
 ItsyBitsy.Bencoding.BencodeWriter.BufferedLength.get -> int
 ItsyBitsy.Bencoding.BencodeWriter.CreateSpanWriter() -> ItsyBitsy.Bencoding.BencodeSpanWriter
 ItsyBitsy.Bencoding.BencodeWriter.Flush(bool final = true) -> void
@@ -116,21 +127,21 @@ ItsyBitsy.Bencoding.BencodeWriter.WriteListTail() -> void
 ItsyBitsy.Bencoding.BencodeWriter.WriteString(System.ReadOnlySpan<byte> value) -> void
 ItsyBitsy.Bencoding.InvalidBencodeException
 ItsyBitsy.Bencoding.InvalidBencodeException.InvalidBencodeException() -> void
-ItsyBitsy.Bencoding.InvalidBencodeException.InvalidBencodeException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context) -> void
-ItsyBitsy.Bencoding.InvalidBencodeException.InvalidBencodeException(string message) -> void
-ItsyBitsy.Bencoding.InvalidBencodeException.InvalidBencodeException(string message, System.Exception inner) -> void
-ItsyBitsy.Bencoding.InvalidBencodeException.InvalidBencodeException(string message, long position) -> void
+ItsyBitsy.Bencoding.InvalidBencodeException.InvalidBencodeException(System.Runtime.Serialization.SerializationInfo! info, System.Runtime.Serialization.StreamingContext context) -> void
+ItsyBitsy.Bencoding.InvalidBencodeException.InvalidBencodeException(string? message) -> void
+ItsyBitsy.Bencoding.InvalidBencodeException.InvalidBencodeException(string? message, System.Exception? inner) -> void
+ItsyBitsy.Bencoding.InvalidBencodeException.InvalidBencodeException(string? message, long position) -> void
 ItsyBitsy.Bencoding.InvalidBencodeException.Position.get -> long
 ItsyBitsy.Bencoding.UnsupportedBencodeException
 ItsyBitsy.Bencoding.UnsupportedBencodeException.Position.get -> long
 ItsyBitsy.Bencoding.UnsupportedBencodeException.UnsupportedBencodeException() -> void
-ItsyBitsy.Bencoding.UnsupportedBencodeException.UnsupportedBencodeException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context) -> void
-ItsyBitsy.Bencoding.UnsupportedBencodeException.UnsupportedBencodeException(string message) -> void
-ItsyBitsy.Bencoding.UnsupportedBencodeException.UnsupportedBencodeException(string message, System.Exception inner) -> void
-ItsyBitsy.Bencoding.UnsupportedBencodeException.UnsupportedBencodeException(string message, long position) -> void
-override ItsyBitsy.Bencoding.InvalidBencodeException.GetObjectData(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context) -> void
-override ItsyBitsy.Bencoding.UnsupportedBencodeException.GetObjectData(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context) -> void
+ItsyBitsy.Bencoding.UnsupportedBencodeException.UnsupportedBencodeException(System.Runtime.Serialization.SerializationInfo! info, System.Runtime.Serialization.StreamingContext context) -> void
+ItsyBitsy.Bencoding.UnsupportedBencodeException.UnsupportedBencodeException(string? message) -> void
+ItsyBitsy.Bencoding.UnsupportedBencodeException.UnsupportedBencodeException(string? message, System.Exception? inner) -> void
+ItsyBitsy.Bencoding.UnsupportedBencodeException.UnsupportedBencodeException(string? message, long position) -> void
+override ItsyBitsy.Bencoding.InvalidBencodeException.GetObjectData(System.Runtime.Serialization.SerializationInfo! info, System.Runtime.Serialization.StreamingContext context) -> void
+override ItsyBitsy.Bencoding.UnsupportedBencodeException.GetObjectData(System.Runtime.Serialization.SerializationInfo! info, System.Runtime.Serialization.StreamingContext context) -> void
 static ItsyBitsy.Bencoding.BencodeStringComparer.Compare(System.ReadOnlySpan<byte> x, System.ReadOnlySpan<byte> y) -> int
 static ItsyBitsy.Bencoding.BencodeStringComparer.Equals(System.ReadOnlySpan<byte> x, System.ReadOnlySpan<byte> y) -> bool
 static ItsyBitsy.Bencoding.BencodeStringComparer.GetHashCode(System.ReadOnlySpan<byte> span) -> int
-static readonly ItsyBitsy.Bencoding.BencodeStringComparer.Instance -> ItsyBitsy.Bencoding.BencodeStringComparer
+static readonly ItsyBitsy.Bencoding.BencodeStringComparer.Instance -> ItsyBitsy.Bencoding.BencodeStringComparer!
