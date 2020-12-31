@@ -128,10 +128,12 @@ namespace ItsyBitsy.Bencoding.Tests
 
             using (var memoryStream = new MemoryStream())
             {
+#pragma warning disable SYSLIB0011 // Type or member is obsolete
                 var formatter = new BinaryFormatter();
                 formatter.Serialize(memoryStream, ex);
                 memoryStream.Position = 0;
                 var newEx = (InvalidBencodeException)formatter.Deserialize(memoryStream);
+#pragma warning restore SYSLIB0011 // Type or member is obsolete
 
                 Assert.Equal(newEx.Position, ex.Position);
             }
