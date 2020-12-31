@@ -97,7 +97,7 @@ namespace ItsyBitsy.Bencoding
         ///     than <paramref name="y"/>.  A positive number indicates that <paramref name="x"/> is
         ///     greater than <paramref name="y"/>.  Zero indicates that <paramref name="x"/> is
         ///     equal to <paramref name="y"/>.</returns>
-        public int Compare(byte[] x, byte[] y) => Compare(x.AsSpan(), y.AsSpan());
+        public int Compare(byte[]? x, byte[]? y) => Compare(x.AsSpan(), y.AsSpan());
 
         /// <summary>
         /// Compares two instances and returns a value indicating their relative values.
@@ -118,7 +118,7 @@ namespace ItsyBitsy.Bencoding
         /// <param name="y">The second instance to compare.</param>
         /// <returns><see langword="true"/> if the two instances are equal; otherwise,
         ///     <see langword="false"/>.</returns>
-        public bool Equals(byte[] x, byte[] y) => Equals(x.AsSpan(), y.AsSpan());
+        public bool Equals(byte[]? x, byte[]? y) => Equals(x.AsSpan(), y.AsSpan());
 
         /// <summary>
         /// Returns a value indicating whether two instance are equal.
@@ -134,7 +134,7 @@ namespace ItsyBitsy.Bencoding
         /// </summary>
         /// <param name="obj">The instance to generate a hash code for.</param>
         /// <returns>The hash code.</returns>
-        public int GetHashCode(byte[] obj) => GetHashCode(obj.AsSpan());
+        public int GetHashCode(byte[]? obj) => GetHashCode(obj.AsSpan());
 
         /// <summary>
         /// Returns the hash code for an instance.
