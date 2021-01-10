@@ -165,7 +165,7 @@ namespace ItsyBitsy.Bencoding
             {
                 Span<byte> numberBuffer = stackalloc byte[1 + _longMaxDigits];
                 if (!Utf8Formatter.TryFormat(value, numberBuffer, out int numberLength))
-                    throw new InvalidOperationException("Unreachable!");
+                    throw new UnreachableException();
 
                 EnsureCapacity(1 + numberLength + 1);
 
@@ -494,7 +494,7 @@ namespace ItsyBitsy.Bencoding
             {
                 Span<byte> numberBuffer = stackalloc byte[_intMaxDigits];
                 if (!Utf8Formatter.TryFormat(value.Length, numberBuffer, out int numberLength))
-                    throw new InvalidOperationException("Unreachable!");
+                    throw new UnreachableException();
 
                 EnsureCapacity(numberLength + 1);
 

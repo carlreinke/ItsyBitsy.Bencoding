@@ -84,6 +84,25 @@ namespace ItsyBitsy.Bencoding.Tests
             Assert.Equal(message, ex.Message);
         }
 
+        [Theory]
+        [InlineData("Test")]
+        public static void Message_AfterSerializationRoundTrip_RetainsValue(string message)
+        {
+            var ex = new UnsupportedBencodeException(message);
+
+            using (var memoryStream = new MemoryStream())
+            {
+#pragma warning disable SYSLIB0011 // Type or member is obsolete
+                var formatter = new BinaryFormatter();
+                formatter.Serialize(memoryStream, ex);
+                memoryStream.Position = 0;
+                var newEx = (UnsupportedBencodeException)formatter.Deserialize(memoryStream);
+#pragma warning restore SYSLIB0011 // Type or member is obsolete
+
+                Assert.Equal(newEx.Message, ex.Message);
+            }
+        }
+
         [Fact]
         public static void Position_AfterDefaultConstructor_IsNegativeOne()
         {

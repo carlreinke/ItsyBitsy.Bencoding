@@ -17,7 +17,6 @@
 //
 using System;
 using System.Buffers.Text;
-using System.Diagnostics;
 
 namespace ItsyBitsy.Bencoding
 {
@@ -784,8 +783,7 @@ namespace ItsyBitsy.Bencoding
                         _ = ReadStringInternal(span, ref index, ref stringHeadLength, ref stringLength);
                         break;
                     default:
-                        Debug.Assert(false);  // This should be unreachable.
-                        throw new InvalidOperationException("Unreachable!");
+                        throw new UnreachableException();
                 }
             }
             while (state != State.Final);
@@ -838,8 +836,7 @@ namespace ItsyBitsy.Bencoding
                         writer.WriteKey(key);
                         break;
                     default:
-                        Debug.Assert(false);  // This should be unreachable.
-                        throw new InvalidOperationException("Unreachable!");
+                        throw new UnreachableException();
                 }
             }
             while (state != State.Final);
@@ -892,8 +889,7 @@ namespace ItsyBitsy.Bencoding
                         writer.WriteKey(key);
                         break;
                     default:
-                        Debug.Assert(false);  // This should be unreachable.
-                        throw new InvalidOperationException("Unreachable!");
+                        throw new UnreachableException();
                 }
             }
             while (state != State.Final);
