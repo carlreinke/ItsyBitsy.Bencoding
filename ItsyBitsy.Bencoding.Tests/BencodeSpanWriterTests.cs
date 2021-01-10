@@ -26,11 +26,59 @@ namespace ItsyBitsy.Bencoding.Tests
     public static partial class BencodeSpanWriterTests
     {
         [Fact]
-        public static void Constructor_DestinationIsNull_ThrowsArgumentNullException()
+        public static void ConstructorSpan_SkipValidationIsFalse_ValidationIsNotSkipped()
+        {
+            byte[] bencode = "d1:bi0e1:ai0ee".ToUtf8();
+            var reader = new BencodeSpanReader(bencode);
+            byte[]? buffer = new byte[bencode.Length];
+            var writer = new BencodeSpanWriter(buffer, skipValidation: false);
+
+            var ex = AssertThrows<InvalidOperationException>(ref reader, ref writer, (ref BencodeSpanReader r, ref BencodeSpanWriter w) => r.ReadValueTo(ref w));
+
+            Assert.Equal("Keys must be ordered and unique.", ex.Message);
+        }
+
+        [Fact]
+        public static void ConstructorSpan_SkipValidationIsFalse_ValidationIsSkipped()
+        {
+            byte[] bencode = "d1:bi0e1:ai0ee".ToUtf8();
+            var reader = new BencodeSpanReader(bencode);
+            byte[]? buffer = new byte[bencode.Length];
+            var writer = new BencodeSpanWriter(buffer, skipValidation: true);
+
+            reader.ReadValueTo(ref writer);
+        }
+
+        [Fact]
+        public static void ConstructorIBufferWriter_DestinationIsNull_ThrowsArgumentNullException()
         {
             var ex = Assert.Throws<ArgumentNullException>(() => new BencodeSpanWriter((IBufferWriter<byte>)null!));
 
             Assert.Equal("destination", ex.ParamName);
+        }
+
+        [Fact]
+        public static void ConstructorIBufferWriter_SkipValidationIsFalse_ValidationIsNotSkipped()
+        {
+            byte[] bencode = "d1:bi0e1:ai0ee".ToUtf8();
+            var reader = new BencodeSpanReader(bencode);
+            var buffer = new FixedLengthBufferWriter(bencode.Length);
+            var writer = new BencodeSpanWriter(buffer, skipValidation: false);
+
+            var ex = AssertThrows<InvalidOperationException>(ref reader, ref writer, (ref BencodeSpanReader r, ref BencodeSpanWriter w) => r.ReadValueTo(ref w));
+
+            Assert.Equal("Keys must be ordered and unique.", ex.Message);
+        }
+
+        [Fact]
+        public static void ConstructorIBufferWriter_SkipValidationIsFalse_ValidationIsSkipped()
+        {
+            byte[] bencode = "d1:bi0e1:ai0ee".ToUtf8();
+            var reader = new BencodeSpanReader(bencode);
+            var buffer = new FixedLengthBufferWriter(bencode.Length);
+            var writer = new BencodeSpanWriter(buffer, skipValidation: true);
+
+            reader.ReadValueTo(ref writer);
         }
 
         ////////////////////////////////////////////////////////////////////////////////////////////

@@ -25,6 +25,30 @@ namespace ItsyBitsy.Bencoding.Tests
     public partial class BencodeWriterTests
     {
         [Fact]
+        public static void Constructor_SkipValidationIsFalse_ValidationIsNotSkipped()
+        {
+            byte[] bencode = "d1:bi0e1:ai0ee".ToUtf8();
+            var reader = new BencodeReader(bencode);
+            var buffer = new FixedLengthBufferWriter(bencode.Length);
+            var writer = new BencodeWriter(buffer, skipValidation: false);
+
+            var ex = Assert.Throws<InvalidOperationException>(() => reader.ReadValueTo(writer));
+
+            Assert.Equal("Keys must be ordered and unique.", ex.Message);
+        }
+
+        [Fact]
+        public static void Constructor_SkipValidationIsFalse_ValidationIsSkipped()
+        {
+            byte[] bencode = "d1:bi0e1:ai0ee".ToUtf8();
+            var reader = new BencodeReader(bencode);
+            var buffer = new FixedLengthBufferWriter(bencode.Length);
+            var writer = new BencodeWriter(buffer, skipValidation: true);
+
+            reader.ReadValueTo(writer);
+        }
+
+        [Fact]
         public static void Constructor_DestinationIsNull_ThrowsArgumentNullException()
         {
             var ex = Assert.Throws<ArgumentNullException>(() => new BencodeWriter(null!));
